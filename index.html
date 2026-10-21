@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🎯 Number Guessing Game</title>
+<style>
+  :root{
+    --bg:#0f1220; --panel:#181c30; --panel2:#20253f; --text:#eef0ff; --muted:#9aa0c3;
+    --accent:#6c7bff; --accent2:#46d6a4; --warn:#ffcc66; --err:#ff6b81; --border:#2c3256;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+  button,input,select{font:inherit}
+  .btn{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:600}
+  .btn:hover{filter:brightness(1.1)}
+  .btn.secondary{background:var(--panel2);border:1px solid var(--border)}
+  .btn.green{background:var(--accent2);color:#0b2a20}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn.block{width:100%}
+  input[type=text],input[type=email],input[type=password],input[type=number],select{
+    width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--panel2);color:var(--text)}
+  label{display:block;font-size:.85rem;color:var(--muted);margin:10px 0 4px}
+  .msg{padding:12px 14px;border-radius:10px;margin:10px 0}
+  .msg.info{background:#1b2a4d;border:1px solid #2d4a85}
+  .msg.warn{background:#4a3a14;border:1px solid #8a6b1f}
+  .msg.ok{background:#14402f;border:1px solid #1f8a62}
+  .msg.err{background:#4a1b25;border:1px solid #8a2f43}
+
+  /* login */
+  #login{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:400px;box-shadow:0 10px 40px #0006}
+  .card h1{margin:0 0 4px;font-size:1.5rem}
+  .card p.sub{margin:0 0 14px;color:var(--muted)}
+
+  /* app layout */
+  #app{display:none}
+  .layout{display:grid;grid-template-columns:320px 1fr;min-height:100vh}
+  aside{background:var(--panel);border-right:1px solid var(--border);padding:18px;overflow-y:auto}
+  main{padding:24px;max-width:900px;width:100%}
+  aside h2{margin:0 0 10px;font-size:1.1rem}
+  aside .sec{margin-bottom:22px}
+  aside .sec .btn{margin-top:8px}
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  h1.title{margin:0;font-size:1.7rem}
+  .row{display:flex;gap:12px}
+  .row > *{flex:1}
+  .player-row{display:grid;grid-template-columns:2fr 1fr;gap:8px}
+  .history div{padding:6px 0;border-bottom:1px solid var(--border)}
+  table{width:100%;border-collapse:collapse;font-size:.78rem}
+  th,td{padding:5px 4px;text-align:left;border-bottom:1px solid var(--border)}
+  th{color:var(--muted)}
+  .guess-row{display:flex;gap:10px}
+  .guess-row input{font-size:1.3rem;letter-spacing:.3em}
+  .colors{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+  .colors .cell{text-align:center}
+  .colors .num{font-size:30px;font-weight:bold;margin-top:4px}
+  hr{border:0;border-top:1px solid var(--border);margin:22px 0}
+  .scoreboard{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .chip{background:var(--panel2);border:1px solid var(--border);border-radius:999px;padding:4px 12px;font-size:.85rem}
+  .chip.active{border-color:var(--accent2);color:var(--accent2)}
+  @media(max-width:800px){.layout{grid-template-columns:1fr}aside{border-right:0;border-bottom:1px solid var(--border)}}
+
+  /* balloons */
+  .balloon{position:fixed;bottom:-80px;font-size:42px;animation:rise 4s ease-in forwards;pointer-events:none;z-index:50}
+  @keyframes rise{to{transform:translateY(-120vh) rotate(20deg);opacity:.9}}
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<section id="login">
+  <form class="card" id="loginForm" autocomplete="off">
+    <h1>🎯 Number Guessing Game</h1>
+    <p class="sub">Please log in to continue</p>
+    <label for="email">Email</label>
+    <input type="email" id="email" required>
+    <label for="password">Password</label>
+    <input type="password" id="password" required>
+    <div id="loginErr" class="msg err" style="display:none">Invalid email or password.</div>
+    <button class="btn block" style="margin-top:16px" type="submit">🔐 Login</button>
+  </form>
+</section>
+
+<!-- Game markup is only injected after a successful login -->
+<div id="app"></div>
+
+<script>
+/* ================= AUTH ================= */
+const AUTH_EMAIL = "wastefellows@game.com";
+const AUTH_PASS  = "WasteFellows@123";
+const AUTH_KEY   = "ngg_authed";
+
+function isAuthed(){ try { return sessionStorage.getItem(AUTH_KEY) === "1"; } catch(e){ return false; } }
+
+document.getElementById("loginForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const em = document.getElementById("email").value.trim().toLowerCase();
+  const pw = document.getElementById("password").value;
+  if (em === AUTH_EMAIL && pw === AUTH_PASS) {
+    try { sessionStorage.setItem(AUTH_KEY, "1"); } catch(e){}
+    startApp();
+  } else {
+    document.getElementById("loginErr").style.display = "block";
+    document.getElementById("password").value = "";
+  }
+});
+
+/* ================= CONSTANTS ================= */
+const LB_KEY  = "ngg_leaderboard";
+const LOG_KEY = "ngg_game_logs";
+const EMOJIS = ["🐒","🐷","🦁","🐼","🐸","🦊","🐯","🐶","🦆"];
+const COLORS = { "None":"white", "Red":"red", "Green":"limegreen", "Yellow":"yellow" };
+const DIFFS = { "Easy (3 digits)":3, "Medium (4 digits)":4, "Hard (5 digits)":5 };
+
+/* ================= STATE ================= */
+let S;
+function freshState(){
+  return {
+    screen:"home",            // home | multiSetup | game
+    mode:null,
+    players:[], avatars:{},
+    attempts:{},
+    currentIdx:0, startingIdx:0,
+    secret:"", gameDigits:0, gameDifficulty:"",
+    history:[], guesses:[],
+    gameOver:false, revealed:false,
+    winner:null,
+    notice:null,              // {type,text}
+    diffLabel:"Easy (3 digits)",
+    numPlayers:2,
+    setupNames:[], setupAvatars:[],
+    colors:Object.fromEntries([...Array(10).keys()].map(i=>[i,"None"]))
+  };
+}
+
+/* ================= STORAGE (local, replaces CSV) ================= */
+function load(key){ try { return JSON.parse(localStorage.getItem(key)) || []; } catch(e){ return []; } }
+function save(key,val){ try { localStorage.setItem(key, JSON.stringify(val)); } catch(e){} }
+function now(){
+  const d=new Date(), p=n=>String(n).padStart(2,"0");
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+function saveScore(player,attempts,difficulty,secret,guesses){
+  const lb = load(LB_KEY);
+  lb.push({DateTime:now(),Player:player,Attempts:attempts,Difficulty:difficulty,SecretNumber:secret,AllGuesses:guesses.join(" | ")});
+  save(LB_KEY, lb);
+}
+function saveGameLog(secret,guesses,difficulty){
+  const lg = load(LOG_KEY);
+  lg.push({DateTime:now(),Difficulty:difficulty,SecretNumber:secret,AllGuesses:guesses.join(" | ")});
+  save(LOG_KEY, lg);
+}
+function toCSV(rows){
+  if(!rows.length) return "";
+  const cols = Object.keys(rows[0]);
+  const esc = v => `"${String(v).replace(/"/g,'""')}"`;
+  return [cols.join(","), ...rows.map(r=>cols.map(c=>esc(r[c])).join(","))].join("\n");
+}
+function download(name,rows){
+  if(!rows.length){ alert("No data to download yet."); return; }
+  const blob = new Blob([toCSV(rows)],{type:"text/csv"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+/* ================= HELPERS ================= */
+const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function generateSecret(len){
+  const d=[0,1,2,3,4,5,6,7,8,9];
+  for(let i=d.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [d[i],d[j]]=[d[j],d[i]]; }
+  return d.slice(0,len).join("");
+}
+function calculateNP(secret,guess){
+  const a=new Set(secret), b=new Set(guess);
+  let N=0; a.forEach(x=>{ if(b.has(x)) N++; });
+  let P=0; for(let i=0;i<secret.length;i++) if(secret[i]===guess[i]) P++;
+  return [N,P];
+}
+function balloons(){
+  const set=["🎈","🎉","🎈","✨","🎈"];
+  for(let i=0;i<30;i++){
+    const b=document.createElement("div");
+    b.className="balloon";
+    b.textContent=set[i%set.length];
+    b.style.left=Math.random()*95+"vw";
+    b.style.animationDelay=(Math.random()*1.2)+"s";
+    b.style.animationDuration=(3+Math.random()*2)+"s";
+    document.body.appendChild(b);
+    setTimeout(()=>b.remove(),6500);
+  }
+}
+
+/* ================= ACTIONS ================= */
+function startSingle(){
+  S.mode="single";
+  S.players=["Anchana"]; S.avatars={Anchana:"😀"}; S.attempts={Anchana:0};
+  S.screen="game"; render();
+}
+function startMulti(){ S.mode="multi"; S.screen="multiSetup"; render(); }
+
+function confirmPlayers(){
+  const names=[], avs={};
+  for(let i=0;i<S.numPlayers;i++){
+    const n=(S.setupNames[i]||"").trim();
+    if(n){ names.push(n); avs[n]=S.setupAvatars[i]||EMOJIS[0]; }
+  }
+  if(names.length!==S.numPlayers){ S.notice={type:"err",text:"Please enter a name for every player."}; render(); return; }
+  if(new Set(names.map(n=>n.toLowerCase())).size!==names.length){ S.notice={type:"err",text:"Player names must be unique."}; render(); return; }
+  S.players=names; S.avatars=avs;
+  S.attempts=Object.fromEntries(names.map(p=>[p,0]));
+  S.currentIdx=0; S.startingIdx=0;
+  S.notice=null; S.screen="game"; render();
+}
+
+function newGame(){
+  if(!S.players.length){ S.notice={type:"err",text:"Add players first!"}; render(); return; }
+  const digits = DIFFS[S.diffLabel];
+  S.secret = generateSecret(digits);
+  S.gameDigits = digits; S.gameDifficulty = S.diffLabel;
+  S.history=[]; S.guesses=[]; S.gameOver=false; S.revealed=false; S.winner=null;
+  S.colors = Object.fromEntries([...Array(10).keys()].map(i=>[i,"None"]));   // reset colour panel
+
+  // Round-robin: this game starts with startingIdx, the next game with the following player
+  S.currentIdx = S.startingIdx;
+  S.startingIdx = (S.startingIdx + 1) % S.players.length;
+  S.players.forEach(p => S.attempts[p]=0);
+
+  S.notice={type:"ok",text:`New number generated! 🎮 Starting player: ${S.players[S.currentIdx]}`};
+  render();
+  const gi=document.getElementById("guess");   // clear typing area
+  if(gi){ gi.value=""; gi.focus(); }
+}
+
+function checkGuess(){
+  const gi=document.getElementById("guess");
+  const guess=gi.value.trim();
+  if(!S.secret){ S.notice={type:"warn",text:"Click “New Game” in the sidebar to start."}; render(); return; }
+  if(S.gameOver) return;
+  if(!/^\d+$/.test(guess) || guess.length!==S.gameDigits){
+    S.notice={type:"err",text:`Enter exactly ${S.gameDigits} digits.`}; render(); return;
+  }
+  const player=S.players[S.currentIdx];
+  S.attempts[player]++;
+  S.guesses.push(guess);
+  const [N,P]=calculateNP(S.secret,guess);
+  S.history.push([guess,N,P]);
+
+  if(P===S.gameDigits){
+    S.gameOver=true; S.winner=player;
+    saveScore(player,S.attempts[player],S.gameDifficulty,S.secret,S.guesses);
+    saveGameLog(S.secret,S.guesses,S.gameDifficulty);
+    S.notice={type:"ok",text:`🎉 ${player} guessed it: ${S.secret} in ${S.attempts[player]} attempt(s)! Click “New Game” to play again.`};
+    render(); balloons();
+  } else {
+    S.notice={type:"warn",text:`${N}N ${P}P`};
+    S.currentIdx=(S.currentIdx+1)%S.players.length;
+    render();
+    document.getElementById("guess").focus();
+  }
+}
+
+function goHome(){
+  const keep=S.colors;
+  S=freshState(); S.colors=keep; render();
+}
+function logout(){
+  try{ sessionStorage.removeItem(AUTH_KEY); }catch(e){}
+  location.reload();
+}
+function clearScores(){
+  if(confirm("Clear the saved leaderboard and game logs from this browser?")){
+    save(LB_KEY,[]); save(LOG_KEY,[]); render();
+  }
+}
+
+/* ================= RENDER ================= */
+function sidebarHTML(){
+  let h=`<div class="sec"><h2>⚙️ Game Setup</h2>`;
+  if(S.screen!=="home"){
+    h+=`<label>Difficulty</label>
+    <select id="diff">${Object.keys(DIFFS).map(k=>`<option ${k===S.diffLabel?"selected":""}>${k}</option>`).join("")}</select>`;
+  }
+  if(S.screen==="multiSetup"){
+    h+=`<label>Players</label><input type="number" id="numPlayers" min="1" max="6" value="${S.numPlayers}">`;
+    for(let i=0;i<S.numPlayers;i++){
+      h+=`<div class="player-row" style="margin-top:8px">
+        <input type="text" data-name="${i}" placeholder="Player ${i+1}" value="${esc(S.setupNames[i]||"")}">
+        <select data-emoji="${i}">${EMOJIS.map(e=>`<option ${(S.setupAvatars[i]||EMOJIS[i%EMOJIS.length])===e?"selected":""}>${e}</option>`).join("")}</select>
+      </div>`;
+    }
+    h+=`<button class="btn green block" id="confirmPlayers">✅ Confirm Players</button>`;
+  }
+  if(S.screen==="game"){
+    h+=`<button class="btn block" id="newGame">🎲 New Game</button>`;
+    if(S.secret) h+=`<button class="btn secondary block" id="reveal">👀 Reveal Secret Number</button>`;
+  }
+  h+=`</div>`;
+
+  // leaderboard
+  const lb=load(LB_KEY).sort((a,b)=>a.Attempts-b.Attempts).slice(0,5);
+  h+=`<div class="sec"><h2>🏆 Leaderboard</h2>`;
+  if(!lb.length) h+=`<div class="msg info">No scores yet</div>`;
+  else h+=`<table><tr><th>Player</th><th>Att.</th><th>Level</th><th>Date</th></tr>${
+    lb.map(r=>`<tr><td>${esc(r.Player)}</td><td>${r.Attempts}</td><td>${esc(r.Difficulty.split(" ")[0])}</td><td>${esc(r.DateTime.slice(0,10))}</td></tr>`).join("")}</table>`;
+  h+=`<button class="btn secondary block" id="dlLb">⬇️ Download Leaderboard CSV</button>
+      <button class="btn secondary block" id="dlLog">⬇️ Download Game Logs CSV</button>
+      <button class="btn secondary block" id="clearScores">🗑️ Clear Saved Data</button></div>`;
+
+  h+=`<div class="sec"><button class="btn secondary block" id="logout">🚪 Logout</button></div>`;
+  return h;
+}
+
+function mainHTML(){
+  let h=`<div class="topbar"><h1 class="title">🎯 Multiplayer Number Guessing Game</h1>${S.screen!=="home"?`<button class="btn secondary" id="home">🏠 Home</button>`:""}</div>`;
+
+  if(S.screen==="home"){
+    h+=`<h3>🎮 Choose Game Mode</h3>
+    <div class="row"><button class="btn" id="single">👤 Single Player</button><button class="btn" id="multi">👥 Multiplayer</button></div>`;
+    return h;
+  }
+  if(S.notice && S.screen==="multiSetup") h+=`<div class="msg ${S.notice.type}">${esc(S.notice.text)}</div>`;
+  if(S.screen==="multiSetup"){
+    h+=`<div class="msg info">👈 Enter player names and avatars in the sidebar, then click “Confirm Players”.</div>`;
+    return h;
+  }
+
+  // game screen
+  if(S.notice) h+=`<div class="msg ${S.notice.type}">${esc(S.notice.text)}</div>`;
+  if(S.revealed && S.secret) h+=`<div class="msg warn">🔓 Secret Number: <b>${S.secret}</b></div>`;
+
+  const player=S.players[S.currentIdx];
+  h+=`<div class="msg info">${S.avatars[player]||"😀"} <b>${esc(player)}'s Turn</b></div>`;
+  if(S.players.length>1){
+    h+=`<div class="scoreboard">${S.players.map((p,i)=>`<span class="chip ${i===S.currentIdx&&!S.gameOver?"active":""}">${S.avatars[p]} ${esc(p)} · ${S.attempts[p]}</span>`).join("")}</div>`;
+  }
+  const d=S.gameDigits||DIFFS[S.diffLabel];
+  h+=`<label style="margin-top:16px">Enter ${d}-digit guess</label>
+  <div class="guess-row">
+    <input type="text" id="guess" inputmode="numeric" maxlength="${d}" autocomplete="off" ${S.gameOver||!S.secret?"disabled":""}>
+    <button class="btn" id="check" ${S.gameOver||!S.secret?"disabled":""}>Check Result</button>
+  </div>
+  ${!S.secret?`<div class="msg warn">Click “🎲 New Game” in the sidebar to generate a number.</div>`:""}`;
+
+  h+=`<hr><h3>📜 Guess History</h3><div class="history">${
+    S.history.length ? [...S.history].reverse().map(([g,n,p])=>`<div>🔹 ${g} → ${n}N ${p}P</div>`).join("") : `<div style="color:var(--muted)">No guesses yet</div>`}</div>`;
+
+  h+=`<hr><h3>🎨 Number Coloring Panel</h3><div class="colors">${
+    [...Array(10).keys()].map(i=>`<div class="cell"><label>${i}</label>
+      <select data-color="${i}">${Object.keys(COLORS).map(c=>`<option ${S.colors[i]===c?"selected":""}>${c}</option>`).join("")}</select>
+      <div class="num" style="color:${COLORS[S.colors[i]]}">${i}</div></div>`).join("")}</div>`;
+  return h;
+}
+
+function render(){
+  const app=document.getElementById("app");
+  app.innerHTML=`<div class="layout"><aside>${sidebarHTML()}</aside><main>${mainHTML()}</main></div>`;
+  bind();
+}
+
+function bind(){
+  const $=id=>document.getElementById(id);
+  $("single")&&($("single").onclick=startSingle);
+  $("multi")&&($("multi").onclick=startMulti);
+  $("home")&&($("home").onclick=goHome);
+  $("logout").onclick=logout;
+  $("dlLb").onclick=()=>download("Leaderboard.csv",load(LB_KEY));
+  $("dlLog").onclick=()=>download("Game_Logs.csv",load(LOG_KEY));
+  $("clearScores").onclick=clearScores;
+  $("newGame")&&($("newGame").onclick=newGame);
+  $("reveal")&&($("reveal").onclick=()=>{S.revealed=true;render();});
+  $("confirmPlayers")&&($("confirmPlayers").onclick=confirmPlayers);
+  $("check")&&($("check").onclick=checkGuess);
+  $("guess")&&$("guess").addEventListener("keydown",e=>{ if(e.key==="Enter") checkGuess(); });
+  $("guess")&&$("guess").addEventListener("input",e=>{ e.target.value=e.target.value.replace(/\D/g,""); });
+
+  if($("diff")) $("diff").onchange=e=>{ S.diffLabel=e.target.value; if(S.screen==="game"&&!S.secret) render(); };
+  if($("numPlayers")) $("numPlayers").onchange=e=>{ S.numPlayers=Math.min(6,Math.max(1,parseInt(e.target.value)||1)); render(); };
+  document.querySelectorAll("[data-name]").forEach(el=>el.oninput=e=>S.setupNames[+el.dataset.name]=e.target.value);
+  document.querySelectorAll("[data-emoji]").forEach(el=>el.onchange=e=>S.setupAvatars[+el.dataset.emoji]=e.target.value);
+  document.querySelectorAll("[data-color]").forEach(el=>el.onchange=e=>{ S.colors[el.dataset.color]=e.target.value; 
+    const g=document.getElementById("guess"), v=g?g.value:""; render(); const g2=document.getElementById("guess"); if(g2) g2.value=v; });
+}
+
+/* ================= START ================= */
+function startApp(){
+  if(!isAuthed()) return;                       // hard gate
+  document.getElementById("login").style.display="none";
+  document.getElementById("app").style.display="block";
+  S=freshState();
+  render();
+}
+if(isAuthed()) startApp();
+</script>
+</body>
+</html>
