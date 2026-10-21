@@ -195,9 +195,8 @@ function balloons(){
 
 /* ================= ACTIONS ================= */
 function startSingle(){
-  S.mode="single";
-  S.players=["Anchana"]; S.avatars={Anchana:"😀"}; S.attempts={Anchana:0};
-  S.screen="game"; render();
+  S.mode="single"; S.numPlayers=1;
+  S.screen="multiSetup"; render();   // reuse the setup screen to ask for the player's name
 }
 function startMulti(){ S.mode="multi"; S.screen="multiSetup"; render(); }
 
@@ -205,9 +204,9 @@ function confirmPlayers(){
   const names=[], avs={};
   for(let i=0;i<S.numPlayers;i++){
     const n=(S.setupNames[i]||"").trim();
-    if(n){ names.push(n); avs[n]=S.setupAvatars[i]||EMOJIS[0]; }
+    if(n){ names.push(n); avs[n]=S.setupAvatars[i]||EMOJIS[i%EMOJIS.length]; }
   }
-  if(names.length!==S.numPlayers){ S.notice={type:"err",text:"Please enter a name for every player."}; render(); return; }
+  if(names.length!==S.numPlayers){ S.notice={type:"err",text:S.mode==="single" ? "Please enter your name." : "Please enter a name for every player."}; render(); return; }
   if(new Set(names.map(n=>n.toLowerCase())).size!==names.length){ S.notice={type:"err",text:"Player names must be unique."}; render(); return; }
   S.players=names; S.avatars=avs;
   S.attempts=Object.fromEntries(names.map(p=>[p,0]));
@@ -284,7 +283,7 @@ function sidebarHTML(){
     <select id="diff">${Object.keys(DIFFS).map(k=>`<option ${k===S.diffLabel?"selected":""}>${k}</option>`).join("")}</select>`;
   }
   if(S.screen==="multiSetup"){
-    h+=`<label>Players</label><input type="number" id="numPlayers" min="1" max="6" value="${S.numPlayers}">`;
+    if(S.mode==="multi") h+=`<label>Players</label><input type="number" id="numPlayers" min="1" max="6" value="${S.numPlayers}">`;
     for(let i=0;i<S.numPlayers;i++){
       h+=`<div class="player-row" style="margin-top:8px">
         <input type="text" data-name="${i}" placeholder="Player ${i+1}" value="${esc(S.setupNames[i]||"")}">
@@ -323,7 +322,7 @@ function mainHTML(){
   }
   if(S.notice && S.screen==="multiSetup") h+=`<div class="msg ${S.notice.type}">${esc(S.notice.text)}</div>`;
   if(S.screen==="multiSetup"){
-    h+=`<div class="msg info">👈 Enter player names and avatars in the sidebar, then click “Confirm Players”.</div>`;
+    h+=`<div class="msg info">👈 ${S.mode==="single" ? "Enter your name and pick an avatar in the sidebar" : "Enter player names and avatars in the sidebar"}, then click “Confirm Players”.</div>`;
     return h;
   }
 
