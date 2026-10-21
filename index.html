@@ -61,6 +61,27 @@
   .chip.active{border-color:var(--accent2);color:var(--accent2)}
   @media(max-width:800px){.layout{grid-template-columns:1fr}aside{border-right:0;border-bottom:1px solid var(--border)}}
 
+  /* scratchpad (paint) */
+  .layout.with-pad{grid-template-columns:320px minmax(0,1fr) 380px}
+  .padcol{padding:24px 24px 24px 0}
+  .pad{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px;position:sticky;top:16px}
+  .pad-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}
+  .pad-tools .btn{padding:6px 10px;font-size:.85rem}
+  .pad-tools .btn.active{outline:2px solid var(--accent2)}
+  .swatch{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);cursor:pointer;padding:0}
+  .swatch.active{border-color:#fff;transform:scale(1.15)}
+  .pad input[type=range]{width:90px;padding:0}
+  .pad canvas{display:block;width:100%;height:auto;aspect-ratio:600/700;background:var(--panel2);border-radius:10px;touch-action:none;cursor:crosshair}
+  @media(max-width:1200px){
+    .layout.with-pad{grid-template-columns:320px minmax(0,1fr)}
+    .padcol{grid-column:2;padding:0 24px 24px}
+    .pad{position:static}
+  }
+  @media(max-width:800px){
+    .layout.with-pad{grid-template-columns:1fr}
+    .padcol{grid-column:1;padding:0 16px 24px}
+  }
+
   /* balloons */
   .balloon{position:fixed;bottom:-80px;font-size:42px;animation:rise 4s ease-in forwards;pointer-events:none;z-index:50}
   @keyframes rise{to{transform:translateY(-120vh) rotate(20deg);opacity:.9}}
@@ -130,7 +151,8 @@ function freshState(){
     diffLabel:"Easy (3 digits)",
     numPlayers:2,
     setupNames:[], setupAvatars:[],
-    colors:Object.fromEntries([...Array(10).keys()].map(i=>[i,"None"]))
+    colors:Object.fromEntries([...Array(10).keys()].map(i=>[i,"None"])),
+    positions:Object.fromEntries([...Array(10).keys()].map(i=>[i,""]))
   };
 }
 
@@ -221,6 +243,8 @@ function newGame(){
   S.gameDigits = digits; S.gameDifficulty = S.diffLabel;
   S.history=[]; S.guesses=[]; S.gameOver=false; S.revealed=false; S.winner=null;
   S.colors = Object.fromEntries([...Array(10).keys()].map(i=>[i,"None"]));   // reset colour panel
+  S.positions = Object.fromEntries([...Array(10).keys()].map(i=>[i,""]));    // reset position marks
+  padClear();                                                                // clear scratchpad
 
   // Round-robin: this game starts with startingIdx, the next game with the following player
   S.currentIdx = S.startingIdx;
@@ -262,8 +286,7 @@ function checkGuess(){
 }
 
 function goHome(){
-  const keep=S.colors;
-  S=freshState(); S.colors=keep; render();
+  S=freshState(); padClear(); render();
 }
 function logout(){
   try{ sessionStorage.removeItem(AUTH_KEY); }catch(e){}
@@ -349,13 +372,78 @@ function mainHTML(){
   h+=`<hr><h3>🎨 Number Coloring Panel</h3><div class="colors">${
     [...Array(10).keys()].map(i=>`<div class="cell"><label>${i}</label>
       <select data-color="${i}">${Object.keys(COLORS).map(c=>`<option ${S.colors[i]===c?"selected":""}>${c}</option>`).join("")}</select>
-      <div class="num" style="color:${COLORS[S.colors[i]]}">${i}</div></div>`).join("")}</div>`;
+      <select data-pos="${i}" style="margin-top:6px"><option value="">Pos: –</option>${
+        [...Array(d).keys()].map(k=>`<option value="${k+1}" ${String(S.positions[i])===String(k+1)?"selected":""}>Pos ${k+1}</option>`).join("")}</select>
+      <div class="num" style="color:${COLORS[S.colors[i]]}">${i}${S.positions[i]?`<span style="font-size:.9rem;color:var(--accent2);margin-left:6px">📍${S.positions[i]}</span>`:""}</div></div>`).join("")}</div>`;
   return h;
+}
+
+/* ---------- Scratchpad: built once so drawings survive re-renders ---------- */
+let PAD=null, padCtx=null, padTool="pen", padColor="#ff6b81", padSize=4, padUndo=[];
+const PAD_COLORS=["#ffffff","#ff6b81","#46d6a4","#ffcc66","#6cc7ff","#c58bff"];
+
+function padSnapshot(){
+  const cv=PAD.querySelector("canvas");
+  padUndo.push(padCtx.getImageData(0,0,cv.width,cv.height));
+  if(padUndo.length>30) padUndo.shift();
+}
+function padClear(){
+  if(!PAD) return;
+  const cv=PAD.querySelector("canvas");
+  padCtx.clearRect(0,0,cv.width,cv.height);
+  padUndo=[];
+}
+function buildPad(){
+  PAD=document.createElement("div");
+  PAD.className="pad";
+  PAD.innerHTML=`
+    <h3 style="margin:0 0 10px">✏️ Scratchpad</h3>
+    <div class="pad-tools">
+      <button class="btn secondary" data-tool="pen">✏️ Pen</button>
+      <button class="btn secondary" data-tool="eraser">🧽 Eraser</button>
+      <button class="btn secondary" data-act="undo">↩️ Undo</button>
+      <button class="btn secondary" data-act="clear">🗑️ Clear</button>
+    </div>
+    <div class="pad-tools">
+      ${PAD_COLORS.map(c=>`<button class="swatch" data-color="${c}" style="background:${c}" title="${c}"></button>`).join("")}
+      <input type="range" min="1" max="30" value="${padSize}" title="Brush size">
+    </div>
+    <canvas width="600" height="700"></canvas>`;
+
+  const cv=PAD.querySelector("canvas");
+  padCtx=cv.getContext("2d");
+  padCtx.lineCap="round"; padCtx.lineJoin="round";
+
+  const refresh=()=>{
+    PAD.querySelectorAll("[data-tool]").forEach(b=>b.classList.toggle("active",b.dataset.tool===padTool));
+    PAD.querySelectorAll(".swatch").forEach(b=>b.classList.toggle("active",b.dataset.color===padColor&&padTool==="pen"));
+  };
+  PAD.querySelectorAll("[data-tool]").forEach(b=>b.onclick=()=>{ padTool=b.dataset.tool; refresh(); });
+  PAD.querySelectorAll(".swatch").forEach(b=>b.onclick=()=>{ padColor=b.dataset.color; padTool="pen"; refresh(); });
+  PAD.querySelector("[data-act=undo]").onclick=()=>{ const s=padUndo.pop(); if(s) padCtx.putImageData(s,0,0); };
+  PAD.querySelector("[data-act=clear]").onclick=()=>{ padSnapshot(); padCtx.clearRect(0,0,cv.width,cv.height); };
+  PAD.querySelector("input[type=range]").oninput=e=>padSize=+e.target.value;
+  refresh();
+
+  let drawing=false,last=null;
+  const pos=e=>{ const r=cv.getBoundingClientRect(); return [(e.clientX-r.left)*cv.width/r.width,(e.clientY-r.top)*cv.height/r.height]; };
+  const stroke=(a,b)=>{
+    padCtx.globalCompositeOperation = padTool==="eraser" ? "destination-out" : "source-over";
+    padCtx.strokeStyle=padColor;
+    padCtx.lineWidth = padTool==="eraser" ? padSize*3 : padSize;
+    padCtx.beginPath(); padCtx.moveTo(a[0],a[1]); padCtx.lineTo(b[0]+0.01,b[1]); padCtx.stroke();
+  };
+  cv.addEventListener("pointerdown",e=>{ drawing=true; cv.setPointerCapture(e.pointerId); padSnapshot(); last=pos(e); stroke(last,last); });
+  cv.addEventListener("pointermove",e=>{ if(!drawing) return; const p=pos(e); stroke(last,p); last=p; });
+  ["pointerup","pointercancel","pointerleave"].forEach(ev=>cv.addEventListener(ev,()=>{ drawing=false; }));
 }
 
 function render(){
   const app=document.getElementById("app");
-  app.innerHTML=`<div class="layout"><aside>${sidebarHTML()}</aside><main>${mainHTML()}</main></div>`;
+  const showPad = S.screen==="game";
+  app.innerHTML=`<div class="layout ${showPad?"with-pad":""}"><aside>${sidebarHTML()}</aside><main>${mainHTML()}</main>${showPad?`<section class="padcol"><div id="padSlot"></div></section>`:""}</div>`;
+  const slot=document.getElementById("padSlot");
+  if(slot && PAD) slot.appendChild(PAD);
   bind();
 }
 
@@ -379,6 +467,8 @@ function bind(){
   if($("numPlayers")) $("numPlayers").onchange=e=>{ S.numPlayers=Math.min(6,Math.max(1,parseInt(e.target.value)||1)); render(); };
   document.querySelectorAll("[data-name]").forEach(el=>el.oninput=e=>S.setupNames[+el.dataset.name]=e.target.value);
   document.querySelectorAll("[data-emoji]").forEach(el=>el.onchange=e=>S.setupAvatars[+el.dataset.emoji]=e.target.value);
+  document.querySelectorAll("[data-pos]").forEach(el=>el.onchange=e=>{ S.positions[el.dataset.pos]=e.target.value;
+    const g=document.getElementById("guess"), v=g?g.value:""; render(); const g2=document.getElementById("guess"); if(g2) g2.value=v; });
   document.querySelectorAll("[data-color]").forEach(el=>el.onchange=e=>{ S.colors[el.dataset.color]=e.target.value; 
     const g=document.getElementById("guess"), v=g?g.value:""; render(); const g2=document.getElementById("guess"); if(g2) g2.value=v; });
 }
@@ -389,6 +479,7 @@ function startApp(){
   document.getElementById("login").style.display="none";
   document.getElementById("app").style.display="block";
   S=freshState();
+  buildPad();
   render();
 }
 if(isAuthed()) startApp();
