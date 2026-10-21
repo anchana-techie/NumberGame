@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>🎯 Number Guessing Game</title>
+<title>🎮 Game Hub</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23181c30'/%3E%3Ctext x='50' y='72' font-size='64' text-anchor='middle'%3E🎮%3C/text%3E%3C/svg%3E">
 <style>
   :root{
     --bg:#0f1220; --panel:#181c30; --panel2:#20253f; --text:#eef0ff; --muted:#9aa0c3;
@@ -82,6 +83,25 @@
     .padcol{grid-column:1;padding:0 16px 24px}
   }
 
+  /* landing + christmom */
+  .layout.nosidebar{grid-template-columns:1fr}
+  .layout.nosidebar main{margin:0 auto}
+  .game-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:10px}
+  .game-btn{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:20px;border-radius:14px;
+    background:var(--panel);border:1px solid var(--border);color:var(--text);cursor:pointer}
+  .game-btn:hover{border-color:var(--accent);background:var(--panel2)}
+  .game-btn:focus-visible,.btn:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
+  .game-btn .ico{font-size:2rem}
+  .game-btn b{font-size:1.1rem}
+  .game-btn span.d{color:var(--muted);font-size:.88rem}
+  .xm-row{display:grid;grid-template-columns:28px 1fr 1.3fr;gap:8px;align-items:center;margin-top:8px}
+  .xm-row .idx{color:var(--muted);text-align:center}
+  .xm-status{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+  details.cfg{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin:14px 0}
+  details.cfg summary{cursor:pointer;font-weight:600}
+  .pink{color:#ff4fa3;font-weight:700}
+  @media(max-width:600px){.xm-row{grid-template-columns:1fr}.xm-row .idx{display:none}}
+
   /* balloons */
   .balloon{position:fixed;bottom:-80px;font-size:42px;animation:rise 4s ease-in forwards;pointer-events:none;z-index:50}
   @keyframes rise{to{transform:translateY(-120vh) rotate(20deg);opacity:.9}}
@@ -92,7 +112,7 @@
 <!-- ================= LOGIN ================= -->
 <section id="login">
   <form class="card" id="loginForm" autocomplete="off">
-    <h1>🎯 Number Guessing Game</h1>
+    <h1>🎮 Game Hub</h1>
     <p class="sub">Please log in to continue</p>
     <label for="email">Email</label>
     <input type="email" id="email" required>
@@ -138,7 +158,7 @@ const DIFFS = { "Easy (3 digits)":3, "Medium (4 digits)":4, "Hard (5 digits)":5 
 let S;
 function freshState(){
   return {
-    screen:"home",            // home | multiSetup | game
+    screen:"landing",         // landing | home | multiSetup | game | xmas
     mode:null,
     players:[], avatars:{},
     attempts:{},
@@ -148,6 +168,8 @@ function freshState(){
     gameOver:false, revealed:false,
     winner:null,
     notice:null,              // {type,text}
+    xm:xmFresh(),
+    spy:spyFresh(),
     diffLabel:"Easy (3 digits)",
     numPlayers:2,
     setupNames:[], setupAvatars:[],
@@ -285,6 +307,176 @@ function checkGuess(){
   }
 }
 
+/* ================= SAVED PLAYER DETAILS (names + emails) ================= */
+const ROSTER_KEY="ngg_rosters";
+function rosterGet(game){
+  try{ const r=JSON.parse(localStorage.getItem(ROSTER_KEY))||{}; return r[game]||null; }catch(e){ return null; }
+}
+function rosterSave(game){
+  const x=S&&S[game]; if(!x) return;
+  try{
+    const r=JSON.parse(localStorage.getItem(ROSTER_KEY))||{};
+    r[game]={n:x.n,names:Array.from({length:x.n},(_,i)=>x.names[i]||""),emails:Array.from({length:x.n},(_,i)=>x.emails[i]||"")};
+    localStorage.setItem(ROSTER_KEY,JSON.stringify(r));
+  }catch(e){}
+}
+function xmFresh(){
+  const r=rosterGet("xm")||{};
+  return {step:"setup",n:r.n||3,names:(r.names||[]).slice(),emails:(r.emails||[]).slice(),assign:[],status:[],busy:false,err:null};
+}
+
+/* ================= CHRISTMOM / CHRISTCHILD ================= */
+const XM_CFG_KEY="xm_emailjs";
+const EMAILJS_DEFAULT={service:"service_wi9rcte",template:"template_eurwy7t",key:"wnlAwSxki91O7ecBt"};
+function xmCfg(){
+  let c={}; try{ c=JSON.parse(localStorage.getItem(XM_CFG_KEY))||{}; }catch(e){}
+  return {service:c.service??EMAILJS_DEFAULT.service, template:c.template??EMAILJS_DEFAULT.template, key:c.key??EMAILJS_DEFAULT.key};
+}
+function xmSaveCfg(c){ try{ localStorage.setItem(XM_CFG_KEY,JSON.stringify(c)); }catch(e){} }
+function emailCfgOk(){ const c=xmCfg(); return !!(c.service&&c.template&&c.key); }
+function cfgHTML(){
+  const c=xmCfg();
+  return `<details class="cfg" open><summary>📧 Email settings (EmailJS) – shared by all games</summary>
+    <div class="msg info" style="font-size:.85rem">Emails are sent from the browser through <b>EmailJS</b>. In your template set <b>To Email</b> to <code>{{to_email}}</code> and put <code>{{{message_html}}}</code> (three braces) in the body so the pink text shows.</div>
+    <label>Service ID</label><input type="text" id="cfgService" value="${esc(c.service)}" autocomplete="off">
+    <label>Template ID</label><input type="text" id="cfgTemplate" value="${esc(c.template)}" autocomplete="off">
+    <label>Public key</label><input type="text" id="cfgKey" value="${esc(c.key)}" autocomplete="off">
+  </details>`;
+}
+const EMAIL_RE=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Random derangement: shuffle until nobody is mapped to themselves
+function derangement(n){
+  const idx=[...Array(n).keys()];
+  do{
+    for(let i=n-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [idx[i],idx[j]]=[idx[j],idx[i]]; }
+  }while(idx.some((v,i)=>v===i));
+  return idx;          // idx[i] = Christ Child of person i
+}
+function xmCollect(){
+  const x=S.xm, names=[], emails=[];
+  for(let i=0;i<x.n;i++){ names.push((x.names[i]||"").trim()); emails.push((x.emails[i]||"").trim().toLowerCase()); }
+  return {names,emails};
+}
+function xmEmailHTML(child){
+  return `<div style="font-family:Arial,sans-serif;font-size:16px;color:#222">Your Christ Child is <span style="color:#ff4fa3;font-weight:bold">${esc(child)}</span></div>`;
+}
+async function emailSend({to_email,to_name,subject,value,html,text}){
+  const c=xmCfg();
+  const res=await fetch("https://api.emailjs.com/api/v1.0/email/send",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({service_id:c.service,template_id:c.template,user_id:c.key,template_params:{
+      to_email,to_name,subject,christ_child_name:value,message_html:html,message:text}})
+  });
+  if(!res.ok) throw new Error((await res.text())||res.status);
+}
+async function xmSend(i){
+  const x=S.xm, child=x.names[x.assign[i]];
+  await emailSend({to_email:x.emails[i],to_name:x.names[i],subject:"Your Christ Child 🎁",value:child,
+    html:xmEmailHTML(child),text:`Your Christ Child is ${child}`});
+}
+async function xmRun(onlyFailed){
+  const x=S.xm; x.busy=true; x.err=null; render();
+  for(let i=0;i<x.n;i++){
+    if(onlyFailed && x.status[i]==="sent") continue;
+    x.status[i]="sending"; render();
+    try{ await xmSend(i); x.status[i]="sent"; }
+    catch(e){ x.status[i]="failed"; x.err=String(e.message||e); }
+    render();
+  }
+  x.busy=false; render();
+}
+async function xmDraw(){
+  const x=S.xm, {names,emails}=xmCollect(), c=xmCfg();
+  const fail=t=>{ S.notice={type:"err",text:t}; render(); };
+  if(x.n<2) return fail("You need at least 2 players.");
+  if(names.some(n=>!n)) return fail("Please enter a name for every player.");
+  if(new Set(names.map(n=>n.toLowerCase())).size!==names.length) return fail("Player names must be unique.");
+  if(emails.some(e=>!EMAIL_RE.test(e))) return fail("Please enter a valid email id for every player.");
+  if(new Set(emails).size!==emails.length) return fail("Each player needs a different email id.");
+  if(!emailCfgOk()) return fail("Please fill in all three EmailJS settings below.");
+  x.names=names; x.emails=emails; rosterSave("xm");
+  x.assign=derangement(x.n);
+  x.status=names.map(()=> "pending");
+  x.step="result"; S.notice=null;
+  xmRun(false);
+}
+
+/* ================= WHO IS THE SPY ================= */
+const SPY_PAIRS=[["Coffee","Tea"],["Cat","Dog"],["Pizza","Burger"],["Apple","Pear"],["Tiger","Lion"],["Shirt","Jacket"],["Train","Bus"],["Beach","Island"],["Piano","Guitar"],["Milk","Curd"],["Cricket","Baseball"],["Doctor","Nurse"],["Pen","Pencil"],["Mango","Peach"],["Moon","Sun"],["River","Lake"],["Biryani","Fried Rice"],["Sofa","Chair"],["Laptop","Tablet"],["Chocolate","Candy"],["Bike","Scooter"],["Rain","Snow"],["Football","Rugby"],["Watch","Clock"],["Teacher","Professor"],["Wallet","Purse"],["Spoon","Fork"],["Ocean","Sea"],["Castle","Palace"],["Ice Cream","Kulfi"],["Crow","Eagle"],["Bangle","Ring"],["Dosa","Pancake"],["Cinema","Theatre"],["Hotel","Hostel"],["Camera","Phone"],["Rose","Lotus"],["Lemon","Orange"],["Saree","Dress"],["Bread","Chapati"]];
+function spyFresh(n){ const r=rosterGet("spy")||{};
+  return {step:"setup",n:n||r.n||4,names:(r.names||[]).slice(),emails:(r.emails||[]).slice(),spies:1,mode:"diff",src:"random",civ:"",spyW:"",
+  roles:[],words:[],status:[],busy:false,err:null,revealed:false,
+  phase:"clues",turn:0,round:1,clues:[],draft:"",votes:[],vturn:0,voteDraft:"",gameErr:null}; }
+function spyMax(n){ return Math.max(1,Math.floor((n-1)/2)); }
+function spyCollect(){
+  const x=S.spy;
+  for(let i=0;i<x.n;i++){ x.names[i]=(x.names[i]||"").trim(); x.emails[i]=(x.emails[i]||"").trim().toLowerCase(); }
+  rosterSave("spy");
+}
+function spyEmail(i){
+  const x=S.spy, w=x.words[i];
+  const pink=t=>`<span style="color:#ff4fa3;font-weight:bold">${esc(t)}</span>`;
+  const body = x.roles[i]==="spy" && w===null
+    ? `You are the ${pink("SPY")} 🕵️ – you have no word. Listen closely and bluff!`
+    : `Your word is ${pink(w)}`;
+  const text = w===null ? "You are the SPY – you have no word. Listen closely and bluff!" : `Your word is ${w}`;
+  return {html:`<div style="font-family:Arial,sans-serif;font-size:16px;color:#222">${body}</div>`,text};
+}
+async function spySend(i){
+  const x=S.spy, m=spyEmail(i);
+  await emailSend({to_email:x.emails[i],to_name:x.names[i],subject:"Your secret word 🕵️",value:x.words[i]??"SPY",html:m.html,text:m.text});
+}
+async function spyRun(onlyFailed){
+  const x=S.spy; x.busy=true; x.err=null; render();
+  for(let i=0;i<x.n;i++){
+    if(onlyFailed && x.status[i]==="sent") continue;
+    x.status[i]="sending"; render();
+    try{ await spySend(i); x.status[i]="sent"; }
+    catch(e){ x.status[i]="failed"; x.err=String(e.message||e); }
+    render();
+  }
+  x.busy=false; render();
+}
+async function spyDraw(){
+  const x=S.spy; spyCollect();
+  const {names,emails}=x;
+  const fail=t=>{ S.notice={type:"err",text:t}; render(); };
+  if(x.n<3) return fail("You need at least 3 players.");
+  if(names.some(n=>!n)) return fail("Please enter a name for every player.");
+  if(new Set(names.map(n=>n.toLowerCase())).size!==names.length) return fail("Player names must be unique.");
+  if(emails.some(e=>!EMAIL_RE.test(e))) return fail("Please enter a valid email id for every player.");
+  if(new Set(emails).size!==emails.length) return fail("Each player needs a different email id.");
+  if(x.spies<1 || x.spies>spyMax(x.n)) return fail(`Spies must be between 1 and ${spyMax(x.n)} for ${x.n} players.`);
+  if(!emailCfgOk()) return fail("Please fill in all three EmailJS settings below.");
+
+  let civ, spyWord=null;
+  if(x.src==="custom"){
+    civ=x.civ.trim(); const sw=x.spyW.trim();
+    if(!civ) return fail("Please enter the civilians' word.");
+    if(x.mode==="diff"){
+      if(!sw) return fail("Please enter the spy's word.");
+      if(sw.toLowerCase()===civ.toLowerCase()) return fail("The spy's word must be different from the civilians' word.");
+      spyWord=sw;
+    }
+  } else {
+    let pair=SPY_PAIRS[Math.floor(Math.random()*SPY_PAIRS.length)].slice();
+    if(Math.random()<.5) pair.reverse();
+    civ=pair[0]; if(x.mode==="diff") spyWord=pair[1];
+  }
+  // pick spies at random
+  const idx=[...Array(x.n).keys()];
+  for(let i=idx.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [idx[i],idx[j]]=[idx[j],idx[i]]; }
+  const spySet=new Set(idx.slice(0,x.spies));
+  x.roles=names.map((_,i)=>spySet.has(i)?"spy":"civ");
+  x.words=names.map((_,i)=>spySet.has(i)?spyWord:civ);
+  x.status=names.map(()=>"pending");
+  x.revealed=false; x.step="result"; S.notice=null;
+  x.phase="clues"; x.turn=0; x.round=1; x.clues=names.map(()=>[]); x.draft="";
+  x.votes=names.map(()=>null); x.vturn=0; x.voteDraft=""; x.gameErr=null;
+  spyRun(false);
+}
+
 function goHome(){
   S=freshState(); padClear(); render();
 }
@@ -335,8 +527,159 @@ function sidebarHTML(){
   return h;
 }
 
+function xmasHTML(){
+  const x=S.xm, c=xmCfg();
+  let h="";
+  if(x.step==="result"){
+    h+=`<div class="msg info">🎁 Christ Children have been drawn. Each Christ Mom gets an email with their match – the pairs are not shown here, so the surprise stays intact.</div>`;
+    h+=x.names.map((n,i)=>`<div class="xm-status"><span>${esc(n)} <span style="color:var(--muted)">(${esc(x.emails[i])})</span></span><span>${
+      {pending:"⏳ Waiting",sending:"✉️ Sending…",sent:"✅ Sent",failed:"❌ Failed"}[x.status[i]]}</span></div>`).join("");
+    if(x.err && x.status.includes("failed")) h+=`<div class="msg err">Some emails failed: ${esc(x.err)}</div>`;
+    h+=`<div class="row" style="margin-top:16px">
+      ${x.status.includes("failed")&&!x.busy?`<button class="btn" id="xmRetry">🔁 Retry failed emails</button>`:""}
+      <button class="btn secondary" id="xmReset" ${x.busy?"disabled":""}>🔄 Start over</button></div>`;
+    return h;
+  }
+  if(S.notice) h+=`<div class="msg ${S.notice.type}">${esc(S.notice.text)}</div>`;
+  h+=`<label>Total number of players</label><input type="number" id="xmN" min="2" max="30" value="${x.n}" style="max-width:160px">`;
+  h+=`<label style="margin-top:16px">Player names and email ids</label>`;
+  for(let i=0;i<x.n;i++){
+    h+=`<div class="xm-row"><span class="idx">${i+1}</span>
+      <input type="text" data-xn="${i}" placeholder="Name" value="${esc(x.names[i]||"")}" autocomplete="off">
+      <input type="email" data-xe="${i}" placeholder="Email id" value="${esc(x.emails[i]||"")}" autocomplete="off"></div>`;
+  }
+  h+=cfgHTML();
+  h+=`<button class="btn green block" id="xmDraw" style="margin-top:8px">🎲 Draw &amp; send emails</button>`;
+  return h;
+}
+
+/* ---- clues, voting & winners ---- */
+function focusClue(){ const el=document.getElementById("spyClue"); if(el) el.focus(); }
+function spyAddClue(){
+  const x=S.spy, v=(x.draft||"").trim();
+  if(!v){ x.gameErr="Please type a clue first."; render(); focusClue(); return; }
+  x.clues[x.turn].push(v); x.draft=""; x.gameErr=null;
+  x.turn++; if(x.turn>=x.n){ x.turn=0; x.round++; }     // round robin: wrap to next round
+  render(); focusClue();
+}
+function spyLockVote(){
+  const x=S.spy;
+  if(x.voteDraft===""||x.voteDraft==null){ x.gameErr="Please pick a player first."; render(); return; }
+  x.votes[x.vturn]=+x.voteDraft; x.voteDraft=""; x.gameErr=null;
+  x.vturn++; if(x.vturn>=x.n) x.phase="done";
+  render();
+}
+function spyWinners(){
+  const x=S.spy; if(x.phase!=="done") return [];
+  return x.names.filter((_,i)=>x.roles[x.votes[i]]==="spy");
+}
+function spyGameHTML(){
+  const x=S.spy; if(x.busy||!x.clues.length) return "";
+  const clueList=`<div>${x.names.map((nm,i)=>`<div class="xm-status" style="justify-content:flex-start;gap:6px"><b>${esc(nm)}</b>: <span>${
+    x.clues[i].length?x.clues[i].map(esc).join(", "):`<span style="color:var(--muted)">–</span>`}</span></div>`).join("")}</div>`;
+  const err=x.gameErr?`<div class="msg err">${esc(x.gameErr)}</div>`:"";
+  let h=`<hr>`;
+
+  if(!x.revealed && x.phase==="clues"){
+    h+=`<h3>🗣️ Clue Round ${x.round}</h3>
+      <div class="scoreboard">${x.names.map((nm,i)=>`<span class="chip ${i===x.turn?"active":""}">${esc(nm)} · ${x.clues[i].length}</span>`).join("")}</div>
+      <div class="msg info" style="margin-top:12px">🎤 <b>${esc(x.names[x.turn])}</b>, it's your turn – give a clue about your word <span style="color:var(--muted)">(don't say the word itself!)</span></div>${err}
+      <div class="guess-row"><input type="text" id="spyClue" placeholder="Type your clue" autocomplete="off" value="${esc(x.draft||"")}" style="font-size:1rem;letter-spacing:normal">
+        <button class="btn" id="spyAddClue">Add clue</button></div>
+      <h3 style="margin-top:20px">📝 Clues so far</h3>${clueList}
+      <button class="btn green block" id="spyToVote" style="margin-top:14px" ${x.round>1?"":"disabled"}>🗳️ Done with clues – start voting</button>
+      ${x.round>1?"":`<div style="color:var(--muted);font-size:.85rem;margin-top:6px">Finish at least one full round of clues to unlock voting.</div>`}`;
+    return h;
+  }
+
+  if(!x.revealed && x.phase==="vote"){
+    const v=x.vturn;
+    h+=`<h3>🗳️ Voting</h3><h3 style="font-size:1rem">📝 Clues</h3>${clueList}
+      <div class="msg info" style="margin-top:14px">🔒 <b>${esc(x.names[v])}</b>, who do you think is the spy? Choose privately, then lock your vote. <span style="color:var(--muted)">(${v+1} of ${x.n})</span></div>${err}
+      <label for="spyVote">Your suspect</label>
+      <select id="spyVote"><option value="">Select a player…</option>${
+        x.names.map((nm,i)=>i===v?"":`<option value="${i}" ${String(x.voteDraft)===String(i)?"selected":""}>${esc(nm)}</option>`).join("")}</select>
+      <button class="btn green block" id="spyLock" style="margin-top:12px">🔒 Lock vote</button>`;
+    return h;
+  }
+
+  h+=`<h3>📝 Clues</h3>${clueList}`;
+  if(!x.revealed){
+    h+=`<div class="msg ok" style="margin-top:14px">✅ All ${x.n} votes are locked in. Press <b>Reveal spy &amp; words</b> to see the winners.</div>`;
+    return h;
+  }
+  if(x.phase!=="done"){
+    h+=`<div class="msg warn" style="margin-top:14px">The reveal was pressed before everyone voted, so winners can't be decided. Press <b>New round</b> to play again.</div>`;
+    return h;
+  }
+  const winners=spyWinners();
+  h+=`<h3 style="margin-top:20px">🗳️ Votes</h3>${x.names.map((nm,i)=>{
+      const ok=x.roles[x.votes[i]]==="spy";
+      return `<div class="xm-status"><span><b>${esc(nm)}</b> voted for <b>${esc(x.names[x.votes[i]])}</b></span><span>${ok?"✅ Correct":"❌ Wrong"}</span></div>`;}).join("")}`;
+  h+=winners.length
+    ? `<div class="msg ok" style="margin-top:14px;font-size:1.1rem">🏆 <b>${winners.map(esc).join(", ")}</b> ${winners.length>1?"are the winners":"is the winner"} – correctly spotted the spy! 🎉</div>`
+    : `<div class="msg warn" style="margin-top:14px;font-size:1.1rem">😶 Nobody found the spy – the spy wins! 🕵️</div>`;
+  return h;
+}
+
+function spyHTML(){
+  const x=S.spy; let h="";
+  if(x.step==="result"){
+    h+=`<div class="msg info">🕵️ Words have been sent by email. Nobody (including the host) can see who the spy is until you press Reveal.</div>`;
+    h+=x.names.map((n,i)=>`<div class="xm-status"><span>${esc(n)} <span style="color:var(--muted)">(${esc(x.emails[i])})</span></span><span>${
+      {pending:"⏳ Waiting",sending:"✉️ Sending…",sent:"✅ Sent",failed:"❌ Failed"}[x.status[i]]}</span></div>`).join("");
+    if(x.err && x.status.includes("failed")) h+=`<div class="msg err">Some emails failed: ${esc(x.err)}</div>`;
+    if(x.revealed){
+      const civW=x.words[x.roles.indexOf("civ")], spyW=x.roles.includes("spy")?x.words[x.roles.indexOf("spy")]:null;
+      h+=`<div class="msg warn" style="margin-top:16px"><b>🔓 Reveal</b><br>Civilians' word: <span class="pink">${esc(civW)}</span> · Spy's word: <span class="pink">${spyW===null?"none (no word)":esc(spyW)}</span>
+        <div style="margin-top:8px">${x.names.map((n,i)=>`<div>${x.roles[i]==="spy"?"🕵️":"🙂"} <b>${esc(n)}</b> – ${x.roles[i]==="spy"?"SPY":"Civilian"}</div>`).join("")}</div></div>`;
+    }
+    h+=`<div class="row" style="margin-top:16px">
+      ${x.status.includes("failed")&&!x.busy?`<button class="btn" id="spyRetry">🔁 Retry failed emails</button>`:""}
+      ${!x.revealed?`<button class="btn" id="spyReveal" ${x.busy?"disabled":""}>🔓 Reveal spy &amp; words</button>`:""}
+      <button class="btn secondary" id="spyReset" ${x.busy?"disabled":""}>🔄 New round</button></div>`;
+    h+=spyGameHTML();
+    return h;
+  }
+  if(S.notice) h+=`<div class="msg ${S.notice.type}">${esc(S.notice.text)}</div>`;
+  h+=`<div class="row">
+    <div><label>Total number of players</label><input type="number" id="spyN" min="3" max="30" value="${x.n}"></div>
+    <div><label>Number of spies (1–${spyMax(x.n)})</label><input type="number" id="spySpies" min="1" max="${spyMax(x.n)}" value="${x.spies}"></div></div>
+  <label>Spy gets</label>
+  <select id="spyMode"><option value="diff" ${x.mode==="diff"?"selected":""}>A similar but different word (spy doesn't know they're the spy)</option>
+    <option value="none" ${x.mode==="none"?"selected":""}>No word (spy knows and must bluff)</option></select>
+  <label>Words</label>
+  <select id="spySrc"><option value="random" ${x.src==="random"?"selected":""}>Random pair from the built-in list</option>
+    <option value="custom" ${x.src==="custom"?"selected":""}>I'll type the words myself</option></select>`;
+  if(x.src==="custom"){
+    h+=`<div class="row"><div><label>Civilians' word</label><input type="text" id="spyCiv" value="${esc(x.civ)}" autocomplete="off"></div>
+      ${x.mode==="diff"?`<div><label>Spy's word</label><input type="text" id="spyW" value="${esc(x.spyW)}" autocomplete="off"></div>`:""}</div>`;
+  }
+  h+=`<label style="margin-top:16px">Player names and email ids</label>`;
+  for(let i=0;i<x.n;i++){
+    h+=`<div class="xm-row"><span class="idx">${i+1}</span>
+      <input type="text" data-sn="${i}" placeholder="Name" value="${esc(x.names[i]||"")}" autocomplete="off">
+      <input type="email" data-se="${i}" placeholder="Email id" value="${esc(x.emails[i]||"")}" autocomplete="off"></div>`;
+  }
+  h+=cfgHTML();
+  h+=`<button class="btn green block" id="spyDraw" style="margin-top:8px">🎲 Assign words &amp; send emails</button>`;
+  return h;
+}
+
 function mainHTML(){
-  let h=`<div class="topbar"><h1 class="title">🎯 Multiplayer Number Guessing Game</h1>${S.screen!=="home"?`<button class="btn secondary" id="home">🏠 Home</button>`:""}</div>`;
+  const titles={landing:"🎮 Game Hub",xmas:"🎄 ChristMom ChristChild",spy:"🕵️ Who Is the Spy?"};
+  let h=`<div class="topbar"><h1 class="title">${titles[S.screen]||"🎯 Multiplayer Number Guessing Game"}</h1><div style="display:flex;gap:8px">${S.screen!=="landing"?`<button class="btn secondary" id="home">🏠 Home</button>`:""}${S.screen==="landing"||S.screen==="xmas"||S.screen==="spy"?`<button class="btn secondary" id="logout">🚪 Logout</button>`:""}</div></div>`;
+
+  if(S.screen==="landing"){
+    h+=`<h3>Choose a game</h3><div class="game-grid">
+      <button class="game-btn" id="goNumber"><span class="ico">🎯</span><b>NumberGame</b><span class="d">Guess the secret number – single or multiplayer.</span></button>
+      <button class="game-btn" id="goXmas"><span class="ico">🎄</span><b>ChristMom ChristChild</b><span class="d">Secretly match everyone with a Christ Child by email.</span></button>
+      <button class="game-btn" id="goSpy"><span class="ico">🕵️</span><b>Who Is the Spy?</b><span class="d">Email each player a secret word – one of them gets a different one.</span></button>
+    </div>`;
+    return h;
+  }
+  if(S.screen==="xmas") return h+xmasHTML();
+  if(S.screen==="spy") return h+spyHTML();
 
   if(S.screen==="home"){
     h+=`<h3>🎮 Choose Game Mode</h3>
@@ -441,7 +784,8 @@ function buildPad(){
 function render(){
   const app=document.getElementById("app");
   const showPad = S.screen==="game";
-  app.innerHTML=`<div class="layout ${showPad?"with-pad":""}"><aside>${sidebarHTML()}</aside><main>${mainHTML()}</main>${showPad?`<section class="padcol"><div id="padSlot"></div></section>`:""}</div>`;
+  const noSide = S.screen==="landing" || S.screen==="xmas" || S.screen==="spy";
+  app.innerHTML=`<div class="layout ${showPad?"with-pad":""} ${noSide?"nosidebar":""}">${noSide?"":`<aside>${sidebarHTML()}</aside>`}<main>${mainHTML()}</main>${showPad?`<section class="padcol"><div id="padSlot"></div></section>`:""}</div>`;
   const slot=document.getElementById("padSlot");
   if(slot && PAD) slot.appendChild(PAD);
   bind();
@@ -452,10 +796,40 @@ function bind(){
   $("single")&&($("single").onclick=startSingle);
   $("multi")&&($("multi").onclick=startMulti);
   $("home")&&($("home").onclick=goHome);
-  $("logout").onclick=logout;
-  $("dlLb").onclick=()=>download("Leaderboard.csv",load(LB_KEY));
-  $("dlLog").onclick=()=>download("Game_Logs.csv",load(LOG_KEY));
-  $("clearScores").onclick=clearScores;
+  $("logout")&&($("logout").onclick=logout);
+  $("dlLb")&&($("dlLb").onclick=()=>download("Leaderboard.csv",load(LB_KEY)));
+  $("dlLog")&&($("dlLog").onclick=()=>download("Game_Logs.csv",load(LOG_KEY)));
+  $("clearScores")&&($("clearScores").onclick=clearScores);
+  $("goNumber")&&($("goNumber").onclick=()=>{ S.screen="home"; render(); });
+  $("goXmas")&&($("goXmas").onclick=()=>{ S.notice=null; S.screen="xmas"; render(); });
+  $("goSpy")&&($("goSpy").onclick=()=>{ S.notice=null; S.screen="spy"; render(); });
+  ["Service","Template","Key"].forEach(k=>{ const el=$("cfg"+k); if(el) el.oninput=()=>xmSaveCfg({service:$("cfgService").value.trim(),template:$("cfgTemplate").value.trim(),key:$("cfgKey").value.trim()}); });
+  // spy game
+  $("spyN")&&($("spyN").onchange=e=>{ spyCollect(); const x=S.spy; x.n=Math.min(30,Math.max(3,parseInt(e.target.value)||3)); x.spies=Math.min(x.spies,spyMax(x.n)); render(); });
+  $("spySpies")&&($("spySpies").onchange=e=>{ spyCollect(); const x=S.spy; x.spies=Math.min(spyMax(x.n),Math.max(1,parseInt(e.target.value)||1)); render(); });
+  $("spyMode")&&($("spyMode").onchange=e=>{ spyCollect(); S.spy.mode=e.target.value; render(); });
+  $("spySrc")&&($("spySrc").onchange=e=>{ spyCollect(); S.spy.src=e.target.value; render(); });
+  $("spyCiv")&&($("spyCiv").oninput=e=>S.spy.civ=e.target.value);
+  $("spyW")&&($("spyW").oninput=e=>S.spy.spyW=e.target.value);
+  document.querySelectorAll("[data-sn]").forEach(el=>el.oninput=e=>{ S.spy.names[+el.dataset.sn]=e.target.value; rosterSave("spy"); });
+  document.querySelectorAll("[data-se]").forEach(el=>el.oninput=e=>{ S.spy.emails[+el.dataset.se]=e.target.value; rosterSave("spy"); });
+  $("spyDraw")&&($("spyDraw").onclick=spyDraw);
+  $("spyRetry")&&($("spyRetry").onclick=()=>spyRun(true));
+  $("spyReveal")&&($("spyReveal").onclick=()=>{ S.spy.revealed=true; S.spy.gameErr=null; render(); if(spyWinners().length) balloons(); });
+  $("spyClue")&&($("spyClue").oninput=e=>S.spy.draft=e.target.value);
+  $("spyClue")&&$("spyClue").addEventListener("keydown",e=>{ if(e.key==="Enter") spyAddClue(); });
+  $("spyAddClue")&&($("spyAddClue").onclick=spyAddClue);
+  $("spyToVote")&&($("spyToVote").onclick=()=>{ const x=S.spy; x.phase="vote"; x.vturn=0; x.voteDraft=""; x.gameErr=null; render(); });
+  $("spyVote")&&($("spyVote").onchange=e=>S.spy.voteDraft=e.target.value);
+  $("spyLock")&&($("spyLock").onclick=spyLockVote);
+  $("spyReset")&&($("spyReset").onclick=()=>{ const o=S.spy; S.spy=Object.assign(spyFresh(o.n),{names:o.names.slice(),emails:o.emails.slice(),spies:o.spies,mode:o.mode,src:o.src}); rosterSave("spy"); S.notice=null; render(); });
+  $("xmN")&&($("xmN").onchange=e=>{ const c=xmCollect(); S.xm.names=c.names; S.xm.emails=c.emails;
+    S.xm.n=Math.min(30,Math.max(2,parseInt(e.target.value)||2)); rosterSave("xm"); render(); });
+  $("xmDraw")&&($("xmDraw").onclick=xmDraw);
+  $("xmRetry")&&($("xmRetry").onclick=()=>xmRun(true));
+  $("xmReset")&&($("xmReset").onclick=()=>{ const o=S.xm; S.xm=Object.assign(xmFresh(),{n:o.n,names:o.names.slice(),emails:o.emails.slice()}); rosterSave("xm"); S.notice=null; render(); });
+  document.querySelectorAll("[data-xn]").forEach(el=>el.oninput=e=>{ S.xm.names[+el.dataset.xn]=e.target.value; rosterSave("xm"); });
+  document.querySelectorAll("[data-xe]").forEach(el=>el.oninput=e=>{ S.xm.emails[+el.dataset.xe]=e.target.value; rosterSave("xm"); });
   $("newGame")&&($("newGame").onclick=newGame);
   $("reveal")&&($("reveal").onclick=()=>{S.revealed=true;render();});
   $("confirmPlayers")&&($("confirmPlayers").onclick=confirmPlayers);
