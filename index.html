@@ -51,7 +51,15 @@
   .row{display:flex;gap:12px;flex-wrap:wrap}
   .row > *{flex:1 1 240px}
   .player-row{display:grid;grid-template-columns:2fr 1fr;gap:8px}
-  .history div{padding:6px 0;border-bottom:1px solid var(--border)}
+  .htable{width:100%;border-collapse:collapse;table-layout:fixed;margin-top:6px}
+  .htable th{text-align:left;color:var(--muted);font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:2px solid var(--border)}
+  .htable td{padding:9px 10px;border-bottom:1px solid var(--border);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .htable th:nth-child(1),.htable td:nth-child(1){width:40%}
+  .htable th:nth-child(2),.htable td:nth-child(2){width:30%}
+  .htable td.gn{font-weight:700;letter-spacing:.2em;font-size:1.05rem}
+  .htable tr.to td{color:var(--muted)}
+  .np{display:inline-block;min-width:38px;text-align:center;background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:2px 8px;font-weight:600;margin-right:4px}
+  .np.p{color:var(--accent2);border-color:var(--accent2)}
   .guess-row{display:flex;gap:10px}
   .guess-row input{font-size:1.3rem;letter-spacing:.3em}
   .colors{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
@@ -1144,10 +1152,12 @@ function numGameHTML(v){
       :`<div class="msg warn" style="margin-top:12px;font-size:1.05rem">😶 Nobody found it. The number was <b>${esc(g.secret)}</b>.</div>`;
     h+=boardHTML(v)+nextControls(v,host);
   }
-  h+=`<hr><h3>📜 Guess History</h3><div class="history">${
-    g.history.length?[...g.history].reverse().map(x=>x.timeout
-      ?`<div class="mut">⏱ ${esc(pName(v,x.pid))} ran out of time</div>`
-      :`<div>🔹 ${pAv(v,x.pid)} ${esc(pName(v,x.pid))}: <b>${esc(x.guess)}</b> → ${x.N}N ${x.P}P</div>`).join(""):`<div class="mut">No guesses yet</div>`}</div>`;
+  h+=`<hr><h3>📜 Guess History</h3>${
+    g.history.length?`<table class="htable"><thead><tr><th>Name</th><th>Number</th><th>Position</th></tr></thead><tbody>${
+      [...g.history].reverse().map(x=>x.timeout
+        ?`<tr class="to"><td>${pAv(v,x.pid)} ${esc(pName(v,x.pid))}</td><td colspan="2">⏱ ran out of time</td></tr>`
+        :`<tr><td>${pAv(v,x.pid)} ${esc(pName(v,x.pid))}</td><td class="gn">${esc(x.guess)}</td><td><span class="np">${x.N}N</span> <span class="np p">${x.P}P</span></td></tr>`).join("")
+    }</tbody></table>`:`<div class="mut">No guesses yet</div>`}`;
   h+=`<hr><h3>🎨 Number Coloring Panel <span class="mut" style="font-size:.8rem;font-weight:400">(just for you)</span></h3><div class="colors">${
     [...Array(10).keys()].map(i=>`<div class="cell"><label>${i}</label>
       <select data-color="${i}">${Object.keys(COLORS).map(c=>`<option ${S.colors[i]===c?"selected":""}>${c}</option>`).join("")}</select>
