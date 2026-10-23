@@ -35,9 +35,17 @@
 
   /* layout */
   .layout{display:grid;grid-template-columns:minmax(0,1fr);min-height:100vh}
-  .layout.with-pad{grid-template-columns:minmax(0,1fr) 380px}
+  .layout.with-pad{grid-template-columns:minmax(0,1fr) 380px;max-width:1500px;margin:0 auto}
   main{padding:24px;max-width:900px;width:100%;margin:0 auto}
-  .layout.with-pad main{margin:0}
+  .layout.with-pad main{margin:0 auto}
+
+  /* modal dialog (replaces browser confirm popups) */
+  .modal-back{position:fixed;inset:0;background:#000a;display:flex;align-items:center;justify-content:center;padding:20px;z-index:100;animation:fadein .15s ease-out}
+  .modal{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:24px;width:100%;max-width:420px;box-shadow:0 20px 60px #000a}
+  .modal h3{margin:0 0 8px;font-size:1.2rem}
+  .modal p{margin:0 0 18px;color:var(--muted);line-height:1.45}
+  .modal .btns{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
   .topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
   h1.title{margin:0;font-size:1.7rem}
   .row{display:flex;gap:12px;flex-wrap:wrap}
@@ -214,7 +222,7 @@ function freshState(){
   return {
     screen:"landing",          // landing | entry | room | xmas | diwali
     game:null,                 // game chosen on the entry screen
-    notice:null, toast:null, busy:null,
+    notice:null, toast:null, busy:null, modal:null,
     me:loadMe(), ui:{},        // ui = drafts of typed inputs, kept across re-renders
     room:null, off:0,
     xm:xmFresh(), dw:dwFresh(),
@@ -719,9 +727,18 @@ function rrTick(R,now){
 }
 
 /* ---- leaving / cleanup ---- */
-function leaveRoom(){
+function showModal(m){ S.modal=m; render(); }
+function closeModal(){ S.modal=null; render(); }
+function modalHTML(){
+  const m=S.modal; if(!m) return "";
+  return `<div class="modal-back" data-a="modalNo"><div class="modal" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
+    <h3>${esc(m.title)}</h3><p>${esc(m.text)}</p>
+    <div class="btns"><button class="btn secondary" data-a="modalNo">Cancel</button>
+    <button class="btn ${m.danger?"danger":"green"}" data-a="modalYes" id="modalYes">${esc(m.ok)}</button></div></div></div>`;
+}
+function leaveRoom(force){
   if(NET.role==="host"){
-    if(!confirm("Close the room for everyone?")) return;
+    if(!force) return showModal({title:"Close the room?",text:"This closes the room for everyone and disconnects all players.",ok:"Close room",danger:true,act:"closeroom"});
     Object.values(NET.conns).forEach(c=>{ try{ c.send({t:"closed"}); }catch(e){} });
   } else { NET.leaving=true; try{ NET.hostConn.send({t:"leave"}); }catch(e){} }
   setTimeout(()=>cleanup(),250);
@@ -1259,7 +1276,7 @@ function render(){
       S.positions=Object.fromEntries([...Array(10).keys()].map(i=>[i,""]));
     }
   }
-  app.innerHTML=`<div class="layout ${inNum?"with-pad":""}"><main>${mainHTML()}</main>${inNum?`<section class="padcol"><div id="padSlot"></div></section>`:""}</div>`;
+  app.innerHTML=`<div class="layout ${inNum?"with-pad":""}"><main>${mainHTML()}</main>${inNum?`<section class="padcol"><div id="padSlot"></div></section>`:""}</div>${modalHTML()}`;
   const slot=$("padSlot"); if(slot&&PAD) slot.appendChild(PAD);
   app.querySelectorAll("[data-keep]").forEach(el=>{ if(S.ui[el.id]!==undefined) el.value=S.ui[el.id]; });
   bind();
@@ -1321,8 +1338,15 @@ function onAppClick(e){
     case "copyLink": copyLink(); break;
     case "leave": leaveRoom(); break;
     case "exitgame":
-      if(confirm("Exit the current game? Everyone stays in the room and you can change the settings in the lobby.")) sendAct({a:"tolobby"});
+      showModal({title:"Exit the game?",text:"Everyone stays in the room. You'll go back to the lobby where you can change the settings and start again.",ok:"Exit game",danger:false,act:"exitgame"});
       break;
+    case "modalNo": closeModal(); break;
+    case "modalYes": {
+      const a=S.modal&&S.modal.act; S.modal=null; render();
+      if(a==="exitgame") sendAct({a:"tolobby"});
+      else if(a==="closeroom") leaveRoom(true);
+      break;
+    }
     case "start": sendAct({a:"start",civ:S.ui.spyCiv,spyW:S.ui.spyW}); break;
     case "act": sendAct({a:t.dataset.x}); break;
     case "clue": doClue(); break;
@@ -1348,6 +1372,7 @@ function onAppInput(e){
   }
 }
 function onAppKey(e){
+  if(e.key==="Escape"&&S.modal){ closeModal(); return; }
   if(e.key!=="Enter") return;
   const id=e.target.id;
   if(id==="spyClue") doClue();
@@ -1365,6 +1390,7 @@ function startApp(){
   app.addEventListener("change",e=>{ onAppInput(e); onAppChange(e); });
   app.addEventListener("input",onAppInput);
   app.addEventListener("keydown",onAppKey);
+  document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&S.modal) closeModal(); });
   if(!ticker) ticker=setInterval(()=>{
     document.querySelectorAll("[data-dl]").forEach(el=>{
       const s=Math.max(0,Math.ceil((+el.dataset.dl-(Date.now()+S.off))/1000));
