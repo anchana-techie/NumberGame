@@ -158,7 +158,7 @@ const DIFFS = { "Easy (3 digits)":3, "Medium (4 digits)":4, "Hard (5 digits)":5 
 let S;
 function freshState(){
   return {
-    screen:"landing",         // landing | home | multiSetup | game | xmas
+    screen:"landing",         // landing | home | multiSetup | game | xmas | spy
     mode:null,
     players:[], avatars:{},
     attempts:{},
@@ -325,12 +325,13 @@ function xmFresh(){
   return {step:"setup",n:r.n||3,names:(r.names||[]).slice(),emails:(r.emails||[]).slice(),assign:[],status:[],busy:false,err:null};
 }
 
-/* ================= CHRISTMOM / CHRISTCHILD ================= */
+/* ================= EMAILJS SETTINGS (no hardcoded IDs) ================= */
+// Service ID, Template ID and Public key are never stored in the code.
+// The user types them once; they are remembered in this browser's localStorage.
 const XM_CFG_KEY="xm_emailjs";
-const EMAILJS_DEFAULT={service:"service_wi9rcte",template:"template_eurwy7t",key:"wnlAwSxki91O7ecBt"};
 function xmCfg(){
   let c={}; try{ c=JSON.parse(localStorage.getItem(XM_CFG_KEY))||{}; }catch(e){}
-  return {service:c.service??EMAILJS_DEFAULT.service, template:c.template??EMAILJS_DEFAULT.template, key:c.key??EMAILJS_DEFAULT.key};
+  return {service:c.service||"", template:c.template||"", key:c.key||""};
 }
 function xmSaveCfg(c){ try{ localStorage.setItem(XM_CFG_KEY,JSON.stringify(c)); }catch(e){} }
 function emailCfgOk(){ const c=xmCfg(); return !!(c.service&&c.template&&c.key); }
@@ -338,13 +339,14 @@ function cfgHTML(){
   const c=xmCfg();
   return `<details class="cfg" open><summary>📧 Email settings (EmailJS) – shared by all games</summary>
     <div class="msg info" style="font-size:.85rem">Emails are sent from the browser through <b>EmailJS</b>. In your template set <b>To Email</b> to <code>{{to_email}}</code> and put <code>{{{message_html}}}</code> (three braces) in the body so the pink text shows.</div>
-    <label>Service ID</label><input type="text" id="cfgService" value="${esc(c.service)}" autocomplete="off">
-    <label>Template ID</label><input type="text" id="cfgTemplate" value="${esc(c.template)}" autocomplete="off">
-    <label>Public key</label><input type="text" id="cfgKey" value="${esc(c.key)}" autocomplete="off">
+    <label>Service ID</label><input type="text" id="cfgService" placeholder="service_xxxxxxx" value="${esc(c.service)}" autocomplete="off">
+    <label>Template ID</label><input type="text" id="cfgTemplate" placeholder="template_xxxxxxx" value="${esc(c.template)}" autocomplete="off">
+    <label>Public key</label><input type="text" id="cfgKey" placeholder="Your EmailJS public key" value="${esc(c.key)}" autocomplete="off">
   </details>`;
 }
 const EMAIL_RE=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/* ================= CHRISTMOM / CHRISTCHILD ================= */
 // Random derangement: shuffle until nobody is mapped to themselves
 function derangement(n){
   const idx=[...Array(n).keys()];
@@ -387,7 +389,7 @@ async function xmRun(onlyFailed){
   x.busy=false; render();
 }
 async function xmDraw(){
-  const x=S.xm, {names,emails}=xmCollect(), c=xmCfg();
+  const x=S.xm, {names,emails}=xmCollect();
   const fail=t=>{ S.notice={type:"err",text:t}; render(); };
   if(x.n<2) return fail("You need at least 2 players.");
   if(names.some(n=>!n)) return fail("Please enter a name for every player.");
@@ -440,7 +442,12 @@ async function spyRun(onlyFailed){
 }
 async function spyDraw(){
   const x=S.spy; spyCollect();
-  const {names,emails}=x;
+  // FIX: trim the arrays to exactly x.n entries. A saved roster from an earlier,
+  // larger player count left empty leftover slots, which made the
+  // "enter a name for every player" check fail even when every visible row was filled.
+  const names=Array.from({length:x.n},(_,i)=>x.names[i]||"");
+  const emails=Array.from({length:x.n},(_,i)=>x.emails[i]||"");
+  x.names=names; x.emails=emails;
   const fail=t=>{ S.notice={type:"err",text:t}; render(); };
   if(x.n<3) return fail("You need at least 3 players.");
   if(names.some(n=>!n)) return fail("Please enter a name for every player.");
@@ -528,7 +535,7 @@ function sidebarHTML(){
 }
 
 function xmasHTML(){
-  const x=S.xm, c=xmCfg();
+  const x=S.xm;
   let h="";
   if(x.step==="result"){
     h+=`<div class="msg info">🎁 Christ Children have been drawn. Each Christ Mom gets an email with their match – the pairs are not shown here, so the surprise stays intact.</div>`;
@@ -843,7 +850,7 @@ function bind(){
   document.querySelectorAll("[data-emoji]").forEach(el=>el.onchange=e=>S.setupAvatars[+el.dataset.emoji]=e.target.value);
   document.querySelectorAll("[data-pos]").forEach(el=>el.onchange=e=>{ S.positions[el.dataset.pos]=e.target.value;
     const g=document.getElementById("guess"), v=g?g.value:""; render(); const g2=document.getElementById("guess"); if(g2) g2.value=v; });
-  document.querySelectorAll("[data-color]").forEach(el=>el.onchange=e=>{ S.colors[el.dataset.color]=e.target.value; 
+  document.querySelectorAll("[data-color]").forEach(el=>el.onchange=e=>{ S.colors[el.dataset.color]=e.target.value;
     const g=document.getElementById("guess"), v=g?g.value:""; render(); const g2=document.getElementById("guess"); if(g2) g2.value=v; });
 }
 
