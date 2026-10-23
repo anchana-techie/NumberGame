@@ -303,12 +303,27 @@ function setRoom(v,off){
   render();
 }
 
+/* ---- connection settings: extra STUN servers + optional TURN relay (helps on mobile data / strict networks) ---- */
+const TURN_KEY="ngg_turn";
+function turnCfg(){ try{ return JSON.parse(localStorage.getItem(TURN_KEY))||{}; }catch(e){ return {}; } }
+function iceConfig(){
+  const iceServers=[
+    {urls:["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302","stun:stun.cloudflare.com:3478","stun:global.stun.twilio.com:3478"]}
+  ];
+  const t=turnCfg();
+  if(t.host&&t.user&&t.cred){
+    const h=t.host.trim();
+    iceServers.push({urls:[`turn:${h}:80`,`turn:${h}:80?transport=tcp`,`turn:${h}:443`,`turns:${h}:443?transport=tcp`],username:t.user.trim(),credential:t.cred.trim()});
+  }
+  return {config:{iceServers}};
+}
+
 function createRoom(game){
   if(!needPeer()||!saveMe()) return;
   S.busy="Creating room…"; render();
   const tryMake=n=>{
     const code=genCode(); let opened=false;
-    const peer=new Peer("wfg-"+code);
+    const peer=new Peer("wfg-"+code,iceConfig());
     peer.on("open",()=>{
       opened=true;
       Object.assign(NET,{peer,role:"host",code,conns:{},hostConn:null,leaving:false,settled:true});
@@ -339,18 +354,22 @@ function joinRoom(code){
   if(code.length<4){ toast("Enter the room code.","err"); return; }
   if(S.screen!=="entry"){ S.screen="entry"; }
   S.busy="Joining room "+code+"…"; render();
-  const peer=new Peer();
+  const peer=new Peer(iceConfig());
   NET.settled=false; NET.leaving=false;
+  let stage="server";            // server -> room -> link
   const fail=t=>{
     if(NET.settled) return;
     try{ peer.destroy(); }catch(e){}
     clearTimeout(to); clearSession(); S.busy=null; toast(t,"err");
   };
-  const to=setTimeout(()=>fail("Could not reach the room. Check the code and your connection."),12000);
+  const to=setTimeout(()=>fail(
+    stage==="server"?"Could not reach the matchmaking server (0.peerjs.com). Check your internet, or try another network."
+    :"Found the room but could not open a direct connection. This usually means a network/firewall block (e.g. host on Wi-Fi, you on mobile data). Put both devices on the same Wi-Fi, or add a TURN relay under 'Connection help' below."),20000);
   peer.on("error",e=>{
-    if(!NET.settled) fail(e.type==="peer-unavailable"?"Room not found. Check the code (the host must keep the room open).":"Connection error ("+e.type+").");
+    if(!NET.settled) fail(e.type==="peer-unavailable"?"Room not found. Check the code (the host must keep the room open and the tab in front).":"Connection error ("+e.type+").");
   });
   peer.on("open",()=>{
+    stage="link";
     const conn=peer.connect("wfg-"+code,{reliable:true});
     conn.on("open",()=>{
       Object.assign(NET,{peer,role:"guest",code,hostConn:conn,conns:{},R:null});
@@ -948,6 +967,12 @@ function entryHTML(){
   h+=`<div class="card2"><h3>🔑 Join a room</h3><label>Room code</label>
     <input type="text" id="joinCode" data-keep maxlength="6" placeholder="ABCDE" autocomplete="off" style="text-transform:uppercase;letter-spacing:.25em;font-size:1.2rem" value="${esc(S.ui.joinCode||"")}">
     <button class="btn block" data-a="join" style="margin-top:12px" ${S.busy?"disabled":""}>Join room</button></div></div>`;
+  const t=turnCfg();
+  h+=`<details class="cfg" ${t.host?"open":""}><summary>🛠 Connection help (optional TURN relay)</summary>
+    <div class="msg info" style="font-size:.85rem">If friends can't join (mobile data vs Wi-Fi, strict networks), create a free account at <b>metered.ca</b> (Open Relay / TURN), copy the host name, username and credential below. Everyone in the room should enter the same details. Saved in this browser only.</div>
+    <label>TURN host</label><input type="text" id="turnHost" placeholder="e.g. global.relay.metered.ca" value="${esc(t.host||"")}" autocomplete="off">
+    <label>Username</label><input type="text" id="turnUser" value="${esc(t.user||"")}" autocomplete="off">
+    <label>Credential</label><input type="text" id="turnCred" value="${esc(t.cred||"")}" autocomplete="off"></details>`;
   return h;
 }
 function boardHTML(v,title){
@@ -1233,6 +1258,7 @@ function render(){
 /* ---- per-render bindings (email games + colour panel) ---- */
 function bind(){
   ["Service","Template","Key"].forEach(k=>{ const el=$("cfg"+k); if(el) el.oninput=()=>xmSaveCfg({service:$("cfgService").value.trim(),template:$("cfgTemplate").value.trim(),key:$("cfgKey").value.trim()}); });
+  ["Host","User","Cred"].forEach(k=>{ const el=$("turn"+k); if(el) el.oninput=()=>{ try{ localStorage.setItem(TURN_KEY,JSON.stringify({host:$("turnHost").value,user:$("turnUser").value,cred:$("turnCred").value})); }catch(e){} }; });
   // diwali
   $("dwN")&&($("dwN").onchange=e=>{ const c=dwCollect(); S.dw.names=c.names; S.dw.emails=c.emails;
     S.dw.n=Math.min(30,Math.max(2,parseInt(e.target.value)||2)); rosterSave("dw"); render(); });
