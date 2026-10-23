@@ -17,6 +17,7 @@
   .btn:hover{filter:brightness(1.1)}
   .btn.secondary{background:var(--panel2);border:1px solid var(--border)}
   .btn.green{background:var(--accent2);color:#0b2a20}
+  .btn.danger{background:var(--err);color:#2a0b12}
   .btn:disabled{opacity:.5;cursor:not-allowed}
   .btn.block{width:100%}
   input[type=text],input[type=email],input[type=password],input[type=number],select{
@@ -29,16 +30,10 @@
   .msg.err{background:#4a1b25;border:1px solid #8a2f43}
   .mut{color:var(--muted)}
 
-  /* login */
-  #login{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
-  .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:400px;box-shadow:0 10px 40px #0006}
-  .card h1{margin:0 0 4px;font-size:1.5rem}
-  .card p.sub{margin:0 0 14px;color:var(--muted)}
   .card2{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;margin-top:12px}
   .card2 h3{margin:0 0 6px}
 
   /* layout */
-  #app{display:none}
   .layout{display:grid;grid-template-columns:minmax(0,1fr);min-height:100vh}
   .layout.with-pad{grid-template-columns:minmax(0,1fr) 380px}
   main{padding:24px;max-width:900px;width:100%;margin:0 auto}
@@ -106,44 +101,10 @@
 </head>
 <body>
 
-<!-- ================= LOGIN ================= -->
-<section id="login">
-  <form class="card" id="loginForm" autocomplete="off">
-    <h1>🎮 Game Hub</h1>
-    <p class="sub">Please log in to continue</p>
-    <label for="email">Email</label>
-    <input type="email" id="email" required>
-    <label for="password">Password</label>
-    <input type="password" id="password" required>
-    <div id="loginErr" class="msg err" style="display:none">Invalid email or password.</div>
-    <button class="btn block" style="margin-top:16px" type="submit">🔐 Login</button>
-  </form>
-</section>
-
 <div id="app"></div>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
-/* ================= AUTH ================= */
-const AUTH_EMAIL = "wastefellows@game.com";
-const AUTH_PASS  = "WasteFellows@123";
-const AUTH_KEY   = "ngg_authed";
-
-function isAuthed(){ try { return sessionStorage.getItem(AUTH_KEY) === "1"; } catch(e){ return false; } }
-
-document.getElementById("loginForm").addEventListener("submit", e => {
-  e.preventDefault();
-  const em = document.getElementById("email").value.trim().toLowerCase();
-  const pw = document.getElementById("password").value;
-  if (em === AUTH_EMAIL && pw === AUTH_PASS) {
-    try { sessionStorage.setItem(AUTH_KEY, "1"); } catch(e){}
-    startApp();
-  } else {
-    document.getElementById("loginErr").style.display = "block";
-    document.getElementById("password").value = "";
-  }
-});
-
 /* ================= CONSTANTS & HELPERS ================= */
 const EMOJIS = ["🐒","🐷","🦁","🐼","🐸","🦊","🐯","🐶","🦆"];
 const COLORS = { "None":"white", "Red":"red", "Green":"limegreen", "Yellow":"yellow" };
@@ -177,16 +138,15 @@ function balloons(){
 }
 
 /* ---- option lists for room settings ---- */
-const T_CLUE=[[15,"15 sec"],[30,"30 sec"],[45,"45 sec"],[60,"1 min"],[90,"90 sec"],[0,"No limit"]];
 const T_VOTE=[[30,"30 sec"],[60,"1 min"],[90,"90 sec"],[120,"2 min"],[180,"3 min"],[0,"No limit"]];
+const T_CLUE=[[15,"15 sec"],[30,"30 sec"],[45,"45 sec"],[60,"1 min"],[90,"90 sec"],[0,"No limit"]];
 const T_GUESS=[[30,"30 sec"],[60,"1 min"],[90,"90 sec"],[120,"2 min"],[0,"No limit"]];
 const ROUNDS=[1,2,3,4,5,6,8,10];
 const SETTINGS={
   spy:[
     {k:"rounds",l:"Rounds (games to play)",o:ROUNDS},
-    {k:"clueRounds",l:"Clue rounds per game",o:[1,2,3,4,5]},
     {k:"clueTime",l:"Time for each member to enter a clue",o:T_CLUE},
-    {k:"voteTime",l:"Time to vote for the spy",o:T_VOTE},
+    {k:"voteTime",l:"Voting time (once someone presses Voting Needed)",o:T_VOTE},
     {k:"spies",l:"Number of spies",o:n=>Array.from({length:spyMax(n)},(_,i)=>i+1)},
     {k:"mode",l:"Spy gets",o:[["diff","A similar but different word (spy doesn't know they're the spy)"],["none","No word (spy knows and must bluff)"]]},
     {k:"src",l:"Words",o:[["random","Random pair from the built-in list"],["custom","I'll type the words myself"]]}
@@ -203,12 +163,12 @@ const SETTINGS={
   ]
 };
 const DEFAULTS={
-  spy:{rounds:3,clueRounds:2,clueTime:30,voteTime:60,spies:1,mode:"diff",src:"random"},
+  spy:{rounds:3,clueTime:30,voteTime:60,spies:1,mode:"diff",src:"random"},
   number:{rounds:3,digits:4,turnTime:30,maxAttempts:0},
   raja:{rounds:3,guessTime:60}
 };
 const BLURB={
-  spy:"Everyone gets a secret word on their own screen – the spy's word is different (or missing). Give clues in turn, then vote for the spy.",
+  spy:"Everyone gets a secret word on their own screen – the spy's word is different (or missing). Players give clues one after another and keep cycling. Anyone who suspects the spy can press “Voting Needed” – most votes is out. Catch the spy to win; if the spy survives until only 2 players are left, the spy wins.",
   number:"One secret number. Guess in turns. N = right digits anywhere, P = right digits in the right place. Faster win = more points.",
   raja:"Secret roles are dealt to each player's screen. The Police must find the Thief – a wrong guess hands the Police's points to the Thief."
 };
@@ -446,9 +406,10 @@ function viewFor(R,pid){
 function gameView(R,pid){
   const g=R.g;
   if(g.kind==="spy"){
-    const v={kind:"spy",phase:g.phase,ids:g.ids,clues:g.clues,cr:g.cr,turn:g.turn,deadline:g.deadline,locked:g.locked,
+    const v={kind:"spy",phase:g.phase,ids:g.ids,clues:g.clues,cyc:g.cyc,turn:g.turn,deadline:g.deadline,locked:g.locked,
+      elim:g.elim,last:g.last,caller:g.caller,
       my:{word:g.words[pid]??null,knowsSpy:g.roles[pid]==="spy"&&g.words[pid]===null}};
-    if(g.phase==="reveal") v.res=Object.assign({},g.res,{roles:g.roles,civ:g.civW,spy:g.spyW,votes:g.votes});
+    if(g.phase==="reveal") v.res=Object.assign({},g.res,{roles:g.roles,civ:g.civW,spy:g.spyW});
     return v;
   }
   if(g.kind==="num"){
@@ -493,8 +454,11 @@ function doAct(R,pid,m){
     case "settings": if(host&&R.phase==="lobby") setSetting(R,m.k,m.v); return;
     case "start": if(host&&R.phase==="lobby") startGame(R,m); return;
     case "tolobby":
-      if(host){
-        R.phase="lobby"; R.g=null; R.round=0; R.scores={}; R.msg=null;
+      // Host leaves the running game (or the final screen) but everyone stays in the room.
+      if(host&&R.phase!=="lobby"){
+        const wasPlaying=R.phase==="play";
+        R.phase="lobby"; R.g=null; R.round=0; R.scores={};
+        R.msg=wasPlaying?"The host exited the game. You are back in the lobby – the room is still open and the host can change settings.":null;
         R.players=R.players.filter(p=>!p.left&&(p.connected||p.pid===R.hostPid));
       }
       return;
@@ -545,6 +509,7 @@ function afterLeave(R,pid){
   if(R.game==="spy"){
     const spiesLeft=g.ids.filter(x=>g.roles[x]==="spy"&&!isLeft(R,x));
     if(act.length<3||!spiesLeft.length) abort(R,"A player left, so the game was stopped (Spy needs at least 3 players and a spy).");
+    else if(spyAliveCiv(R)<=spyAliveSpies(R)){ g.last=g.last||null; spyEnd(R,false); }
     else if(g.phase==="vote") spyCheckVotes(R);
     else if(g.phase==="clues"&&g.ids[g.turn]===pid){ g.clues[pid].push("—"); spyAdvance(R); }
   } else if(R.game==="number"){
@@ -563,7 +528,16 @@ function hostTick(){
 }
 function addScore(R,pts){ Object.keys(pts).forEach(pid=>{ R.scores[pid]=(R.scores[pid]||0)+pts[pid]; }); }
 
-/* ---------- SPY ---------- */
+/* ---------- SPY ----------
+   Clues go person 1, person 2, person 3 ... and keep cycling.
+   Any live player can press "Voting Needed". Most votes is voted out:
+   - spy voted out  -> civilians win, round over
+   - civilian out   -> eliminated (no more clues / votes); spy wins when civilians left <= spies left
+   - tie / no votes -> nobody is out, clues continue                                              */
+const spyAlive=R=>R.g.ids.filter(p=>!R.g.elim[p]&&!isLeft(R,p));
+const spyAliveSpies=R=>spyAlive(R).filter(p=>R.g.roles[p]==="spy").length;
+const spyAliveCiv=R=>spyAlive(R).filter(p=>R.g.roles[p]==="civ").length;
+
 function spyDeal(R){
   const st=R.settings, act=R.players.filter(p=>!p.left).map(p=>p.pid);
   let civ, spyWord=null;
@@ -577,23 +551,30 @@ function spyDeal(R){
   const ids=shuffle(act), spySet=new Set(shuffle(act).slice(0,Math.min(st.spies,spyMax(act.length))));
   const roles={},words={},clues={};
   ids.forEach(pid=>{ const s=spySet.has(pid); roles[pid]=s?"spy":"civ"; words[pid]=s?spyWord:civ; clues[pid]=[]; });
-  R.g={kind:"spy",phase:"clues",ids,roles,words,clues,cr:1,turn:0,
-    deadline:st.clueTime?Date.now()+st.clueTime*1000:0,votes:{},locked:{},civW:civ,spyW:spyWord,res:null};
+  R.g={kind:"spy",phase:"clues",ids,roles,words,clues,cyc:1,turn:0,
+    deadline:st.clueTime?Date.now()+st.clueTime*1000:0,votes:{},locked:{},elim:{},last:null,caller:null,
+    civW:civ,spyW:spyWord,res:null};
 }
 const normW=s=>" "+String(s).toLowerCase().replace(/[^\p{L}\p{N}]+/gu," ").trim()+" ";
 function spyAct(R,pid,m){
   const g=R.g;
   if(m.a==="clue"&&g.phase==="clues"){
+    if(g.elim[pid]) return tell(R,pid,"You have been eliminated.");
     if(g.ids[g.turn]!==pid) return tell(R,pid,"It's not your turn.");
     const text=String(m.text||"").trim().slice(0,40);
     if(!text) return tell(R,pid,"Type a clue first.");
     const w=g.words[pid];
     if(w&&normW(text).includes(normW(w))) return tell(R,pid,"Don't say your word itself!");
     g.clues[pid].push(text); spyAdvance(R);
+  } else if(m.a==="callvote"&&g.phase==="clues"){
+    if(!g.ids.includes(pid)||g.elim[pid]||isLeft(R,pid)) return tell(R,pid,"Eliminated players can't call a vote.");
+    g.phase="vote"; g.votes={}; g.locked={}; g.caller=pid;
+    g.deadline=R.settings.voteTime?Date.now()+R.settings.voteTime*1000:0;
+    spyCheckVotes(R);
   } else if(m.a==="vote"&&g.phase==="vote"){
-    if(!g.ids.includes(pid)||g.locked[pid]) return;
+    if(!g.ids.includes(pid)||g.elim[pid]||g.locked[pid]) return;
     const t=m.target;
-    if(t===pid||!g.ids.includes(t)||isLeft(R,t)) return tell(R,pid,"Pick another player.");
+    if(t===pid||!g.ids.includes(t)||g.elim[t]||isLeft(R,t)) return tell(R,pid,"Pick another player.");
     g.votes[pid]=t; g.locked[pid]=true; spyCheckVotes(R);
   }
 }
@@ -601,43 +582,57 @@ function spyAdvance(R){
   const g=R.g, st=R.settings; let guard=0;
   do{
     g.turn++;
-    if(g.turn>=g.ids.length){ g.turn=0; g.cr++; }
-    if(g.cr>st.clueRounds){ spyStartVote(R); return; }
+    if(g.turn>=g.ids.length){ g.turn=0; g.cyc++; }
     guard++;
-  } while(gone(R,g.ids[g.turn])&&guard<300);
+  } while((g.elim[g.ids[g.turn]]||gone(R,g.ids[g.turn]))&&guard<300);
   g.deadline=st.clueTime?Date.now()+st.clueTime*1000:0;
 }
-function spyStartVote(R){
+function spyResume(R){
   const g=R.g, st=R.settings;
-  g.phase="vote"; g.deadline=st.voteTime?Date.now()+st.voteTime*1000:0;
-  spyCheckVotes(R);
+  g.phase="clues"; g.votes={}; g.locked={}; g.caller=null;
+  const cur=g.ids[g.turn];
+  if(g.elim[cur]||gone(R,cur)) spyAdvance(R);
+  else g.deadline=st.clueTime?Date.now()+st.clueTime*1000:0;
 }
 function spyCheckVotes(R){
   const g=R.g; if(g.phase!=="vote") return;
-  const live=g.ids.filter(p=>!gone(R,p));
-  if(live.every(p=>g.locked[p])) spyReveal(R);
+  const voters=g.ids.filter(p=>!g.elim[p]&&!gone(R,p));
+  if(voters.every(p=>g.locked[p])) spyResolve(R);
 }
-function spyReveal(R){
-  const g=R.g, tally={};
-  Object.values(g.votes).forEach(t=>{ tally[t]=(tally[t]||0)+1; });
+function spyResolve(R){
+  const g=R.g, votes=Object.assign({},g.votes), tally={};
+  Object.values(votes).forEach(t=>{ tally[t]=(tally[t]||0)+1; });
   let top=null,max=0,tie=false;
   Object.entries(tally).forEach(([t,c])=>{ if(c>max){ max=c; top=t; tie=false; } else if(c===max) tie=true; });
   if(tie) top=null;
-  const topIsSpy=!!top&&g.roles[top]==="spy";
+  g.last={votes,tally,top,tie:!top,eliminated:null,wasSpy:false};
+  g.votes={}; g.locked={};
+  if(!top){ spyResume(R); return; }                                  // tie / no votes: nobody out
+  if(g.roles[top]==="spy"){ g.last.wasSpy=true; spyEnd(R,true); return; }   // spy caught
+  g.elim[top]=true; g.last.eliminated=top;                            // civilian voted out
+  if(spyAliveCiv(R)<=spyAliveSpies(R)){ spyEnd(R,false); return; }    // spy survives to the end
+  spyResume(R);
+}
+function spyEnd(R,caught){
+  const g=R.g, last=g.last||{votes:{},tally:{},top:null};
   const pts={}; g.ids.forEach(p=>pts[p]=0);
-  Object.entries(g.votes).forEach(([voter,t])=>{ if(g.roles[t]==="spy") pts[voter]+=1; });
-  if(!topIsSpy) g.ids.forEach(p=>{ if(g.roles[p]==="spy"&&!isLeft(R,p)) pts[p]+=2; });
+  if(caught){
+    g.ids.forEach(p=>{ if(g.roles[p]==="civ"&&!isLeft(R,p)) pts[p]+=2; });
+    Object.entries(last.votes).forEach(([voter,t])=>{ if(g.roles[t]==="spy"&&g.roles[voter]==="civ") pts[voter]+=1; });
+  } else g.ids.forEach(p=>{ if(g.roles[p]==="spy"&&!isLeft(R,p)) pts[p]+=3; });
   addScore(R,pts);
-  g.res={tally,top,tie,topIsSpy,pts}; g.phase="reveal"; g.deadline=0;
+  g.res={caught,topIsSpy:caught,top:last.top,tally:last.tally,votes:last.votes,pts};
+  g.phase="reveal"; g.deadline=0;
 }
 function spyTick(R,now){
   const g=R.g;
   if(g.phase==="clues"){
+    if(!g.ids.some(p=>!g.elim[p]&&!gone(R,p))) return false;        // nobody online: just wait
     const cur=g.ids[g.turn];
-    if(gone(R,cur)){ g.clues[cur].push("—"); spyAdvance(R); return true; }
+    if(g.elim[cur]||gone(R,cur)){ if(!g.elim[cur]) g.clues[cur].push("—"); spyAdvance(R); return true; }
     if(g.deadline&&now>g.deadline){ g.clues[cur].push("⏱ (no clue)"); spyAdvance(R); return true; }
   } else if(g.phase==="vote"){
-    if(g.deadline&&now>g.deadline){ spyReveal(R); return true; }
+    if(g.deadline&&now>g.deadline){ spyResolve(R); return true; }
     spyCheckVotes(R); return g.phase!=="vote";
   }
   return false;
@@ -937,14 +932,14 @@ const timerHTML=dl=>dl?`<span class="chip timer" data-dl="${dl}">⏱ …</span>`
 const optLabel=o=>Array.isArray(o)?o[1]:o;
 
 function topbar(title,home){
-  return `<div class="topbar"><h1 class="title">${title}</h1><div style="display:flex;gap:8px">${home?`<button class="btn secondary" data-a="home">🏠 Home</button>`:""}<button class="btn secondary" data-a="logout">🚪 Logout</button></div></div>`;
+  return `<div class="topbar"><h1 class="title">${title}</h1><div style="display:flex;gap:8px">${home?`<button class="btn secondary" data-a="home">🏠 Home</button>`:""}</div></div>`;
 }
 function landingHTML(){
   let h=topbar("🎮 Game Hub",false);
   if(S.notice) h+=`<div class="msg ${S.notice.type}">${esc(S.notice.text)}</div>`;
   h+=`<h3>Play online with a room code</h3><div class="game-grid">
     <button class="game-btn" data-a="go" data-g="number"><span class="ico">🎯</span><b>NumberGame</b><span class="d">Guess the secret number in turns. Rounds, timers and attempts are set per room.</span></button>
-    <button class="game-btn" data-a="go" data-g="spy"><span class="ico">🕵️</span><b>Who Is the Spy?</b><span class="d">Secret words on every screen. Clue rounds, timed voting, scoreboard.</span></button>
+    <button class="game-btn" data-a="go" data-g="spy"><span class="ico">🕵️</span><b>Who Is the Spy?</b><span class="d">Secret words on every screen. Cycle clues, call a vote when you suspect someone.</span></button>
     <button class="game-btn" data-a="go" data-g="raja"><span class="ico">👑</span><b>Raja Rani</b><span class="d">3–20 players. Secret roles, Police finds the Thief, multi-round scores.</span></button>
     <button class="game-btn" data-a="goJoin"><span class="ico">🔑</span><b>Join a room</b><span class="d">Got a room code or invite link from a friend? Enter it here.</span></button>
   </div>
@@ -993,6 +988,7 @@ function roomHTML(){
   const host=v.me===v.hostPid;
   let h=`<div class="topbar"><h1 class="title">${GTITLE[v.game]}</h1><div style="display:flex;gap:8px;flex-wrap:wrap">
     <button class="btn secondary" data-a="copyLink">🔗 Invite link</button>
+    ${host&&v.phase==="play"?`<button class="btn secondary" data-a="exitgame">⏹ Exit game (keep room)</button>`:""}
     <button class="btn secondary" data-a="leave">${host?"✖ Close room":"🚪 Leave room"}</button></div></div>`;
   h+=toastHTML();
   h+=`<div class="card2" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
@@ -1039,20 +1035,29 @@ function endHTML(v,host){
     ?`<div class="msg ok" style="font-size:1.1rem">🏆 ${winners.map(p=>p.av+" <b>"+esc(p.name)+"</b>").join(", ")} ${winners.length>1?"win":"wins"} with ${max} points! 🎉</div>`
     :`<div class="msg info">No points were scored.</div>`;
   h+=boardHTML({players:v.players,scores:v.scores,g:null});
-  h+=host?`<button class="btn green block" style="margin-top:14px" data-a="act" data-x="tolobby">🔁 Back to lobby (play again)</button>`
+  h+=host?`<button class="btn green block" style="margin-top:14px" data-a="act" data-x="tolobby">🔁 Back to lobby (change settings / play again)</button>`
     :`<div class="msg info" style="margin-top:14px">⏳ Waiting for the host to go back to the lobby…</div>`;
   return h;
 }
 
 /* ---- Spy ---- */
 function cluesHTML(v,g){
-  return g.ids.map(pid=>`<div class="xm-status" style="justify-content:flex-start;gap:6px"><span>${pAv(v,pid)} <b>${esc(pName(v,pid))}</b>:</span> <span>${
-    g.clues[pid].length?g.clues[pid].map(esc).join(", "):'<span class="mut">–</span>'}</span></div>`).join("");
+  return g.ids.map(pid=>`<div class="xm-status" style="justify-content:flex-start;gap:6px"><span>${pAv(v,pid)} <b>${esc(pName(v,pid))}</b>${g.elim&&g.elim[pid]?" ❌":""}:</span> <span>${
+    g.clues[pid].length?g.clues[pid].map((c,i)=>`${i+1}. ${esc(c)}`).join(" &nbsp; "):'<span class="mut">–</span>'}</span></div>`).join("");
+}
+function votesListHTML(v,g,votes,roles){
+  const ids=g.ids.filter(p=>votes[p]);
+  if(!ids.length) return `<div class="mut">No votes were cast.</div>`;
+  return ids.map(p=>{
+    const t=votes[p];
+    return `<div class="xm-status"><span><b>${esc(pName(v,p))}</b> voted for <b>${esc(pName(v,t))}</b></span><span>${roles?(roles[t]==="spy"?"✅ Spy":"❌ Civilian"):""}</span></div>`;
+  }).join("");
 }
 function spyGameHTML(v){
   const g=v.g, st=v.settings, me=v.me, host=me===v.hostPid;
+  const out=p=>!!(g.elim&&g.elim[p]);
   let h=`<div class="scoreboard"><span class="chip">Round ${v.round}/${st.rounds}</span>${
-    g.phase==="clues"?`<span class="chip">🗣️ Clue round ${g.cr}/${st.clueRounds}</span>`:g.phase==="vote"?`<span class="chip">🗳️ Voting</span>`:`<span class="chip">🔓 Reveal</span>`}${timerHTML(g.deadline)}</div>`;
+    g.phase==="clues"?`<span class="chip">🗣️ Clue cycle ${g.cyc}</span>`:g.phase==="vote"?`<span class="chip">🗳️ Voting</span>`:`<span class="chip">🔓 Reveal</span>`}${timerHTML(g.phase==="reveal"?0:g.deadline)}</div>`;
   if(g.phase!=="reveal"){
     h+=`<div class="msg info" style="margin-top:12px">${g.my.knowsSpy
       ?`You are the <span class="pink">SPY</span> 🕵️ – you have no word. Listen closely and bluff!`
@@ -1060,32 +1065,44 @@ function spyGameHTML(v){
   }
   if(g.phase==="clues"){
     const cur=g.ids[g.turn];
-    h+=`<div class="scoreboard">${g.ids.map(p=>`<span class="chip ${p===cur?"active":""} ${pObj(v,p).left?"gone":""}">${pAv(v,p)} ${esc(pName(v,p))} · ${g.clues[p].length}</span>`).join("")}</div>`;
-    if(cur===me){
-      h+=`<div class="msg ok">🎤 <b>Your turn!</b> Give a clue about your word <span class="mut">(don't say the word itself)</span></div>
-        <div class="guess-row"><input type="text" id="spyClue" data-keep maxlength="40" placeholder="Type your clue" autocomplete="off" style="font-size:1rem;letter-spacing:normal">
-        <button class="btn" data-a="clue">Add clue</button></div>`;
-    } else h+=`<div class="msg info">⏳ Waiting for ${pAv(v,cur)} <b>${esc(pName(v,cur))}</b> to give a clue…</div>`;
+    h+=`<div class="scoreboard">${g.ids.map(p=>`<span class="chip ${p===cur?"active":""} ${out(p)||pObj(v,p).left?"gone":""}">${out(p)?"❌ ":""}${pAv(v,p)} ${esc(pName(v,p))} · ${g.clues[p].length}</span>`).join("")}</div>`;
+    if(g.last){
+      const L=g.last;
+      h+=`<div class="msg warn">🗳️ <b>Last vote:</b> ${L.eliminated
+        ?`${pAv(v,L.eliminated)} <b>${esc(pName(v,L.eliminated))}</b> was voted out – they were a <b>civilian</b>! They can no longer give clues or vote. The spy is still among you…`
+        :`It was a tie (or nobody voted) – nobody was eliminated.`}</div>`;
+    }
+    if(out(me)){
+      h+=`<div class="msg err">❌ You have been eliminated. You can keep watching, but you can't give clues or vote.</div>`;
+    } else {
+      if(cur===me){
+        h+=`<div class="msg ok">🎤 <b>Your turn!</b> Give a clue about your word <span class="mut">(don't say the word itself)</span></div>
+          <div class="guess-row"><input type="text" id="spyClue" data-keep maxlength="40" placeholder="Type your clue" autocomplete="off" style="font-size:1rem;letter-spacing:normal">
+          <button class="btn" data-a="clue">Add clue</button></div>`;
+      } else h+=`<div class="msg info">⏳ Waiting for ${pAv(v,cur)} <b>${esc(pName(v,cur))}</b> to give a clue…</div>`;
+      h+=`<button class="btn danger block" style="margin-top:10px" data-a="callvote">🗳️ Voting Needed – I think I found the spy!</button>
+        <div class="mut" style="font-size:.82rem;margin-top:4px">Starts a vote for everyone${st.voteTime?` (${Math.round(st.voteTime)} sec)`:" (no time limit)"}. Most votes is out.</div>`;
+    }
     h+=`<h3 style="margin-top:20px">📝 Clues so far</h3>${cluesHTML(v,g)}`;
   } else if(g.phase==="vote"){
-    h+=`<h3 style="margin-top:20px">📝 Clues</h3>${cluesHTML(v,g)}<h3 style="margin-top:20px">🗳️ Who is the spy?</h3>`;
-    if(g.ids.includes(me)&&!g.locked[me]){
+    h+=`<div class="msg warn" style="margin-top:12px">🗳️ ${g.caller?`${pAv(v,g.caller)} <b>${esc(pName(v,g.caller))}</b> called for a vote!`:"A vote was called!"} Who is the spy?</div>`;
+    h+=`<h3 style="margin-top:12px">📝 Clues</h3>${cluesHTML(v,g)}<h3 style="margin-top:20px">🗳️ Cast your vote</h3>`;
+    if(out(me)) h+=`<div class="msg err">❌ You have been eliminated and can't vote. Watch the others decide…</div>`;
+    else if(!g.locked[me]){
       h+=`<div class="msg info">Choose privately, then lock your vote.</div>
         <select id="voteSel" data-keep><option value="">Select a player…</option>${
-          g.ids.filter(p=>p!==me&&!pObj(v,p).left).map(p=>`<option value="${esc(p)}">${pAv(v,p)} ${esc(pName(v,p))}</option>`).join("")}</select>
+          g.ids.filter(p=>p!==me&&!out(p)&&!pObj(v,p).left).map(p=>`<option value="${esc(p)}">${pAv(v,p)} ${esc(pName(v,p))}</option>`).join("")}</select>
         <button class="btn green block" style="margin-top:12px" data-a="vote">🔒 Lock vote</button>`;
     } else h+=`<div class="msg ok">✅ Your vote is locked. Waiting for the others…</div>`;
-    h+=`<div class="scoreboard">${g.ids.map(p=>`<span class="chip">${g.locked[p]?"✅":"⏳"} ${esc(pName(v,p))}</span>`).join("")}</div>`;
+    h+=`<div class="scoreboard">${g.ids.filter(p=>!out(p)&&!pObj(v,p).left).map(p=>`<span class="chip">${g.locked[p]?"✅":"⏳"} ${esc(pName(v,p))}</span>`).join("")}</div>`;
   } else {
     const r=g.res;
-    h+=`<div class="msg warn" style="margin-top:12px"><b>🔓 Reveal</b><br>Civilians' word: <span class="pink">${esc(r.civ)}</span> · Spy's word: <span class="pink">${r.spy===null?"none (no word)":esc(r.spy)}</span>
-      <div style="margin-top:8px">${g.ids.map(p=>`<div>${r.roles[p]==="spy"?"🕵️":"🙂"} <b>${esc(pName(v,p))}</b> – ${r.roles[p]==="spy"?"SPY":"Civilian"}</div>`).join("")}</div></div>`;
-    h+=`<h3>📝 Clues</h3>${cluesHTML(v,g)}<h3 style="margin-top:20px">🗳️ Votes</h3>${g.ids.map(p=>{
-      const t=r.votes[p];
-      return `<div class="xm-status"><span><b>${esc(pName(v,p))}</b> ${t?`voted for <b>${esc(pName(v,t))}</b>`:"didn't vote"}</span><span>${t?(r.roles[t]==="spy"?"✅ Correct":"❌ Wrong"):"–"}</span></div>`;}).join("")}`;
-    h+=r.topIsSpy
-      ?`<div class="msg ok" style="margin-top:14px;font-size:1.05rem">🏆 The group caught the spy: <b>${esc(pName(v,r.top))}</b>! 🎉</div>`
-      :`<div class="msg warn" style="margin-top:14px;font-size:1.05rem">${r.top?`❌ The group voted out <b>${esc(pName(v,r.top))}</b>, who was a civilian.`:`😶 No clear majority.`} The spy wins this round! 🕵️ <span class="mut">(+2 for the spy)</span></div>`;
+    h+=r.caught
+      ?`<div class="msg ok" style="margin-top:12px;font-size:1.05rem">🏆 The group caught the spy: ${pAv(v,r.top)} <b>${esc(pName(v,r.top))}</b>! Civilians win! 🎉</div>`
+      :`<div class="msg warn" style="margin-top:12px;font-size:1.05rem">🕵️ The spy survived until only ${g.ids.filter(p=>!out(p)&&!pObj(v,p).left).length} players were left. <b>The spy wins this round!</b> <span class="mut">(+3 for the spy)</span></div>`;
+    h+=`<div class="msg warn"><b>🔓 Reveal</b><br>Civilians' word: <span class="pink">${esc(r.civ)}</span> · Spy's word: <span class="pink">${r.spy===null?"none (no word)":esc(r.spy)}</span>
+      <div style="margin-top:8px">${g.ids.map(p=>`<div>${r.roles[p]==="spy"?"🕵️":"🙂"} <b>${esc(pName(v,p))}</b> – ${r.roles[p]==="spy"?"SPY":"Civilian"}${out(p)?" (voted out)":""}</div>`).join("")}</div></div>`;
+    h+=`<h3>📝 Clues</h3>${cluesHTML(v,g)}<h3 style="margin-top:20px">🗳️ Final vote</h3>${votesListHTML(v,g,r.votes||{},r.roles)}`;
     h+=boardHTML(v)+nextControls(v,host);
   }
   return h;
@@ -1282,12 +1299,6 @@ function bind(){
 
 /* ================= EVENT DELEGATION ================= */
 function goHome(){ S=freshState(); padClear(); render(); }
-function logout(){
-  try{ NET.peer&&NET.peer.destroy(); }catch(e){}
-  clearSession();
-  try{ sessionStorage.removeItem(AUTH_KEY); }catch(e){}
-  location.reload();
-}
 function doClue(){
   const t=String(S.ui.spyClue||"").trim();
   if(!t) return toast("Type a clue first.","err");
@@ -1301,7 +1312,6 @@ function onAppClick(e){
   const t=e.target.closest("[data-a]"); if(!t||t.disabled) return;
   switch(t.dataset.a){
     case "home": goHome(); break;
-    case "logout": logout(); break;
     case "go": S.notice=null; S.game=t.dataset.g; S.screen="entry"; render(); break;
     case "goJoin": S.notice=null; S.game=null; S.screen="entry"; render(); break;
     case "goXmas": S.notice=null; S.screen="xmas"; render(); break;
@@ -1310,9 +1320,13 @@ function onAppClick(e){
     case "join": joinRoom(S.ui.joinCode||""); break;
     case "copyLink": copyLink(); break;
     case "leave": leaveRoom(); break;
+    case "exitgame":
+      if(confirm("Exit the current game? Everyone stays in the room and you can change the settings in the lobby.")) sendAct({a:"tolobby"});
+      break;
     case "start": sendAct({a:"start",civ:S.ui.spyCiv,spyW:S.ui.spyW}); break;
     case "act": sendAct({a:t.dataset.x}); break;
     case "clue": doClue(); break;
+    case "callvote": sendAct({a:"callvote"}); break;
     case "guess": doGuess(); break;
     case "vote":
       if(!S.ui.voteSel) return toast("Pick a player first.","err");
@@ -1344,9 +1358,6 @@ function onAppKey(e){
 /* ================= START ================= */
 let ticker=null;
 function startApp(){
-  if(!isAuthed()) return;                       // hard gate
-  $("login").style.display="none";
-  $("app").style.display="block";
   S=freshState();
   buildPad();
   const app=$("app");
@@ -1370,7 +1381,7 @@ function startApp(){
   if(q){ S.screen="entry"; S.game=null; S.ui.joinCode=q; }
   render();
 }
-if(isAuthed()) startApp();
+startApp();
 </script>
 </body>
 </html>
