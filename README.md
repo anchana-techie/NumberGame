@@ -1,71 +1,52 @@
-# 🎯 Multiplayer Number Guessing Game
+# 🎮 Game Hub
 
-A browser-based number guessing game for one or more players, built as a single `index.html` file. No server or build step is needed, so it runs on GitHub Pages or by opening the file locally.
+A single-file (`index.html`) browser game hub for playing with friends online. No server, build step or login needed – just open the file.
 
-## How to Play
+## Games
 
-1. Open the page and log in.
-2. Choose **Single Player** or **Multiplayer**.
-3. In multiplayer, set the number of players (1–6), enter their names, pick avatars, and click **Confirm Players**.
-4. Pick a difficulty in the sidebar and click **New Game**. A secret number with no repeated digits is generated.
-5. Take turns guessing. After each guess you get a hint in the form `xN yP`:
-   - **N**: how many digits of your guess appear anywhere in the secret number.
-   - **P**: how many of those digits are also in the correct position.
-6. The first player to get all digits in the correct position (P equals the number of digits) wins.
+### 🎯 Number Game
+Guess a secret number in turns.
+- **N** = how many digits are correct (anywhere), **P** = how many are in the correct position.
+- Faster win = more points (`11 − attempts`, minimum 3).
+- Guess History is shown as a table (Name / Number / Position).
+- Personal colouring panel and a scratchpad (pen, eraser, undo, clear) for your notes.
+- Settings: rounds, difficulty (3/4/5 digits), time per guess, max guesses.
 
-### Difficulty Levels
+### 🕵️ Who Is the Spy?
+3–15 players. Everyone gets a secret word on their own screen; the spy's word is different (or missing).
+- Players give clues in order (person 1, 2, 3 …) and keep cycling.
+- Anyone who suspects the spy presses **🗳️ Voting Needed** – all active players vote; most votes is out.
+  - **Spy caught** → round over, civilians win.
+  - **Civilian voted out** → eliminated (can't give clues or vote), play continues. The spy wins when civilians left ≤ spies left (2 players left with 1 spy).
+  - **Tie / no votes** → nobody is out.
+- Scoring: catch the spy = +2 per civilian, +1 extra for each civilian who voted for the spy; spy wins = +3 for the spy.
+- Settings: rounds, clue time, voting time, number of spies, spy word mode, random/custom words.
 
-| Level  | Digits |
-|--------|--------|
-| Easy   | 3      |
-| Medium | 4      |
-| Hard   | 5      |
+### 👑 Raja Rani
+3–20 players. Secret roles are dealt; the Police must find the Thief. A wrong guess hands the Police's points to the Thief.
+- Settings: rounds, time for the Police to guess.
 
-The difficulty you pick applies from the next **New Game**.
+### 🎄 ChristMom ChristChild / 🪔 Diwali Daddy Diwali Kid
+Secret-Santa style draws. Names and emails are entered, a random matching (nobody gets themselves) is made, and each person is emailed their match. Pairs are never shown on screen.
 
-## Features
+## How to play online
+1. Open `index.html` (host it on any static host, e.g. GitHub Pages, Netlify, or open locally).
+2. Pick a game, enter your name and avatar, and **Create room**.
+3. Share the **room code** or **Invite link** with friends. They open the page and **Join room**.
+4. In the lobby the host changes the room settings and presses **Start game**.
 
-- **Login gate**: the game screen is not loaded until you log in.
-- **Single and multiplayer modes**, with names and emoji avatars for each player.
-- **Round-robin starts**: Player 1 starts game 1, Player 2 starts game 2, and so on, wrapping back to Player 1.
-- **Guess history** showing every guess and its N/P hint, newest first.
-- **Number colouring panel**: mark digits 0–9 as Red, Green or Yellow to track your deductions.
-- **New Game reset**: clears the typing box, guess history and colour panel.
-- **Reveal Secret Number** button.
-- **Top 5 leaderboard**, ranked by fewest attempts.
-- **Balloon celebration** when someone wins.
+### Host controls
+- **⏹ Exit game (keep room)** – leave the running game and return to the lobby; everyone stays in the room and the host can change settings.
+- **✖ Close room** – closes the room for everyone.
+- Players who disconnect can rejoin with the room code while the room is open.
 
-## Login
+## Technical notes
+- Online play uses [PeerJS](https://peerjs.com) (WebRTC). The **host's browser acts as the server** – the host must keep the tab open and in front. Secret words/roles are only sent to the player they belong to.
+- If friends can't connect (e.g. mobile data vs Wi-Fi, strict firewalls), use **Connection help** on the entry screen to add a free TURN relay (e.g. from metered.ca). Everyone in the room should enter the same details.
+- The email games use [EmailJS](https://www.emailjs.com). Enter your Service ID, Template ID and Public key in the email settings. In your EmailJS template set **To Email** to `{{to_email}}` and put `{{{message_html}}}` (three braces) in the body.
+- Names, rosters and settings are stored in your browser (localStorage) only.
+- Requires an internet connection (PeerJS and EmailJS are loaded/used online).
 
-| Field    | Value                  |
-|----------|------------------------|
-| Email    | `wastefellows@game.com` |
-| Password | `WasteFellows@123`      |
-
-## Data Storage
-
-GitHub Pages can't write files, so scores and game logs are saved in the browser's `localStorage`:
-
-- Each browser and device keeps its own leaderboard.
-- Clearing your browser's site data removes the saved scores.
-- The sidebar has buttons to **download** the leaderboard (`Leaderboard.csv`) and game logs (`Game_Logs.csv`), and to **clear** saved data.
-
-Leaderboard and log fields: date and time, player, attempts, difficulty, secret number, and all guesses.
-
-## Running Locally
-
-Open `index.html` in any modern browser.
-
-## Deploying to GitHub Pages
-
-1. Push `index.html` and `README.md` to a GitHub repository.
-2. Go to **Settings → Pages**.
-3. Under **Source**, select your branch (e.g. `main`) and the `/ (root)` folder, then save.
-4. Your game will be available at `https://<username>.github.io/<repository>/`.
-
-## Project Structure
-
-```
-├── index.html   # The whole game (HTML, CSS, JavaScript)
-└── README.md    # This file
-```
+## Files
+- `index.html` – the entire app (HTML, CSS and JavaScript).
+- `README.md` – this file.
