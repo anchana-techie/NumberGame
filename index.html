@@ -153,6 +153,7 @@ const LOG_KEY = "ngg_game_logs";
 const EMOJIS = ["🐒","🐷","🦁","🐼","🐸","🦊","🐯","🐶","🦆"];
 const COLORS = { "None":"white", "Red":"red", "Green":"limegreen", "Yellow":"yellow" };
 const DIFFS = { "Easy (3 digits)":3, "Medium (4 digits)":4, "Hard (5 digits)":5 };
+const NOSIDE = ["landing","xmas","spy","diwali","raja"];   // screens without the sidebar
 
 /* ================= STATE ================= */
 let S;
@@ -170,6 +171,8 @@ function freshState(){
     notice:null,              // {type,text}
     xm:xmFresh(),
     spy:spyFresh(),
+    dw:dwFresh(),
+    rr:rrFresh(),
     diffLabel:"Easy (3 digits)",
     numPlayers:2,
     setupNames:[], setupAvatars:[],
@@ -484,6 +487,239 @@ async function spyDraw(){
   spyRun(false);
 }
 
+/* ================= DIWALI DADDY / DIWALI KID ================= */
+function dwFresh(){
+  const r=rosterGet("dw")||{};
+  return {step:"setup",n:r.n||3,names:(r.names||[]).slice(),emails:(r.emails||[]).slice(),assign:[],status:[],busy:false,err:null};
+}
+function dwCollect(){
+  const x=S.dw, names=[], emails=[];
+  for(let i=0;i<x.n;i++){ names.push((x.names[i]||"").trim()); emails.push((x.emails[i]||"").trim().toLowerCase()); }
+  return {names,emails};
+}
+function dwEmailHTML(kid){
+  return `<div style="font-family:Arial,sans-serif;font-size:16px;color:#222">🪔 Your Diwali Kid is <span style="color:#ff4fa3;font-weight:bold">${esc(kid)}</span></div>`;
+}
+async function dwSend(i){
+  const x=S.dw, kid=x.names[x.assign[i]];
+  await emailSend({to_email:x.emails[i],to_name:x.names[i],subject:"Your Diwali Kid 🪔",value:kid,
+    html:dwEmailHTML(kid),text:`Your Diwali Kid is ${kid}`});
+}
+async function dwRun(onlyFailed){
+  const x=S.dw; x.busy=true; x.err=null; render();
+  for(let i=0;i<x.n;i++){
+    if(onlyFailed && x.status[i]==="sent") continue;
+    x.status[i]="sending"; render();
+    try{ await dwSend(i); x.status[i]="sent"; }
+    catch(e){ x.status[i]="failed"; x.err=String(e.message||e); }
+    render();
+  }
+  x.busy=false; render();
+}
+async function dwDraw(){
+  const x=S.dw, {names,emails}=dwCollect();
+  const fail=t=>{ S.notice={type:"err",text:t}; render(); };
+  if(x.n<2) return fail("You need at least 2 players.");
+  if(names.some(n=>!n)) return fail("Please enter a name for every player.");
+  if(new Set(names.map(n=>n.toLowerCase())).size!==names.length) return fail("Player names must be unique.");
+  if(emails.some(e=>!EMAIL_RE.test(e))) return fail("Please enter a valid email id for every player.");
+  if(new Set(emails).size!==emails.length) return fail("Each player needs a different email id.");
+  if(!emailCfgOk()) return fail("Please fill in all three EmailJS settings below.");
+  x.names=names; x.emails=emails; rosterSave("dw");
+  x.assign=derangement(x.n);
+  x.status=names.map(()=>"pending");
+  x.step="result"; S.notice=null;
+  dwRun(false);
+}
+function dwHTML(){
+  const x=S.dw; let h="";
+  if(x.step==="result"){
+    h+=`<div class="msg info">🪔 Diwali Kids have been drawn. Each Diwali Daddy gets an email with their match – the pairs are not shown here, so the surprise stays intact.</div>`;
+    h+=x.names.map((n,i)=>`<div class="xm-status"><span>${esc(n)} <span style="color:var(--muted)">(${esc(x.emails[i])})</span></span><span>${
+      {pending:"⏳ Waiting",sending:"✉️ Sending…",sent:"✅ Sent",failed:"❌ Failed"}[x.status[i]]}</span></div>`).join("");
+    if(x.err && x.status.includes("failed")) h+=`<div class="msg err">Some emails failed: ${esc(x.err)}</div>`;
+    h+=`<div class="row" style="margin-top:16px">
+      ${x.status.includes("failed")&&!x.busy?`<button class="btn" id="dwRetry">🔁 Retry failed emails</button>`:""}
+      <button class="btn secondary" id="dwReset" ${x.busy?"disabled":""}>🔄 Start over</button></div>`;
+    return h;
+  }
+  if(S.notice) h+=`<div class="msg ${S.notice.type}">${esc(S.notice.text)}</div>`;
+  h+=`<label>Total number of players</label><input type="number" id="dwN" min="2" max="30" value="${x.n}" style="max-width:160px">`;
+  h+=`<label style="margin-top:16px">Player names and email ids</label>`;
+  for(let i=0;i<x.n;i++){
+    h+=`<div class="xm-row"><span class="idx">${i+1}</span>
+      <input type="text" data-dn="${i}" placeholder="Name" value="${esc(x.names[i]||"")}" autocomplete="off">
+      <input type="email" data-de="${i}" placeholder="Email id" value="${esc(x.emails[i]||"")}" autocomplete="off"></div>`;
+  }
+  h+=cfgHTML();
+  h+=`<button class="btn green block" id="dwDraw" style="margin-top:8px">🎲 Draw &amp; send emails</button>`;
+  return h;
+}
+
+/* ================= RAJA RANI (3 to 20 players) ================= */
+// Roles are used in this order: a game with N players uses the first N roles,
+// so King, Police and Thief are always present. Points are fixed per role.
+const RR_ROLES=[
+  {key:"king",name:"King",emoji:"👑",pts:10000},
+  {key:"police",name:"Police",emoji:"🚓",pts:1000,hint:"Listen closely – when the host calls you, find the Thief!"},
+  {key:"thief",name:"Thief",emoji:"🦹",pts:0,hint:"Stay hidden! If the Police guesses wrong, you take the Police's points."},
+  {key:"queen",name:"Queen",emoji:"👸",pts:5000},
+  {key:"minister",name:"Minister",emoji:"🎩",pts:2500},
+  {key:"knight",name:"Knight",emoji:"🛡️",pts:1500},
+  {key:"milkman",name:"MilkMan",emoji:"🥛",pts:700},
+  {key:"doctor",name:"Doctor",emoji:"🩺",pts:900},
+  {key:"teacher",name:"Teacher",emoji:"📚",pts:800},
+  {key:"farmer",name:"Farmer",emoji:"🌾",pts:600},
+  {key:"merchant",name:"Merchant",emoji:"💰",pts:500},
+  {key:"cook",name:"Cook",emoji:"🍳",pts:400},
+  {key:"tailor",name:"Tailor",emoji:"🧵",pts:300},
+  {key:"barber",name:"Barber",emoji:"💈",pts:250},
+  {key:"carpenter",name:"Carpenter",emoji:"🪚",pts:200},
+  {key:"gardener",name:"Gardener",emoji:"🌻",pts:150},
+  {key:"potter",name:"Potter",emoji:"🏺",pts:100},
+  {key:"washerman",name:"Washerman",emoji:"🧺",pts:75},
+  {key:"fisherman",name:"Fisherman",emoji:"🎣",pts:50},
+  {key:"beggar",name:"Beggar",emoji:"🥣",pts:25}
+];
+const RR_SCORE_KEY="ngg_rr_scores";
+function rrScores(){ try{ return JSON.parse(localStorage.getItem(RR_SCORE_KEY))||{}; }catch(e){ return {}; } }
+function rrSaveScores(o){ try{ localStorage.setItem(RR_SCORE_KEY,JSON.stringify(o)); }catch(e){} }
+function rrFresh(){
+  const r=rosterGet("rr")||{};
+  return {step:"setup",n:Math.min(20,Math.max(3,r.n||5)),names:(r.names||[]).slice(),emails:(r.emails||[]).slice(),
+    roles:[],status:[],busy:false,err:null,
+    phase:"wait",guessDraft:"",guess:null,revealed:false,res:null,gameErr:null};
+}
+function rrCollect(){
+  const x=S.rr, names=[], emails=[];
+  for(let i=0;i<x.n;i++){ names.push((x.names[i]||"").trim()); emails.push((x.emails[i]||"").trim().toLowerCase()); }
+  return {names,emails};
+}
+function rrLabel(r){ return `${r.emoji} ${r.name}`; }
+function rrEmail(i){
+  const x=S.rr, r=RR_ROLES[x.roles[i]];
+  const pink=t=>`<span style="color:#ff4fa3;font-weight:bold">${esc(t)}</span>`;
+  const hint=r.hint?`<div style="margin-top:8px">${esc(r.hint)}</div>`:"";
+  const html=`<div style="font-family:Arial,sans-serif;font-size:16px;color:#222">You are the ${pink(rrLabel(r))} – worth ${pink(r.pts)} points.${hint}</div>`;
+  const text=`You are the ${r.name} – worth ${r.pts} points.${r.hint?" "+r.hint:""}`;
+  return {html,text};
+}
+async function rrSend(i){
+  const x=S.rr, m=rrEmail(i), r=RR_ROLES[x.roles[i]];
+  await emailSend({to_email:x.emails[i],to_name:x.names[i],subject:"Your Raja Rani role 👑",value:r.name,html:m.html,text:m.text});
+}
+async function rrRun(onlyFailed){
+  const x=S.rr; x.busy=true; x.err=null; render();
+  for(let i=0;i<x.n;i++){
+    if(onlyFailed && x.status[i]==="sent") continue;
+    x.status[i]="sending"; render();
+    try{ await rrSend(i); x.status[i]="sent"; }
+    catch(e){ x.status[i]="failed"; x.err=String(e.message||e); }
+    render();
+  }
+  x.busy=false; render();
+}
+async function rrDraw(){
+  const x=S.rr, {names,emails}=rrCollect();
+  const fail=t=>{ S.notice={type:"err",text:t}; render(); };
+  if(x.n<3||x.n>20) return fail("Raja Rani needs 3 to 20 players.");
+  if(names.some(n=>!n)) return fail("Please enter a name for every player.");
+  if(new Set(names.map(n=>n.toLowerCase())).size!==names.length) return fail("Player names must be unique.");
+  if(emails.some(e=>!EMAIL_RE.test(e))) return fail("Please enter a valid email id for every player.");
+  if(new Set(emails).size!==emails.length) return fail("Each player needs a different email id.");
+  if(!emailCfgOk()) return fail("Please fill in all three EmailJS settings below.");
+  x.names=names; x.emails=emails; rosterSave("rr");
+  const idx=[...Array(x.n).keys()];                       // role indices 0..n-1
+  for(let i=idx.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [idx[i],idx[j]]=[idx[j],idx[i]]; }
+  x.roles=idx;
+  x.status=names.map(()=>"pending");
+  x.phase="wait"; x.guessDraft=""; x.guess=null; x.revealed=false; x.res=null; x.gameErr=null;
+  x.step="result"; S.notice=null;
+  rrRun(false);
+}
+function rrLockGuess(){
+  const x=S.rr;
+  if(x.guessDraft===""||x.guessDraft==null){ x.gameErr="Please pick who you think the Thief is."; render(); return; }
+  x.guess=+x.guessDraft; x.gameErr=null; x.phase="locked"; render();
+}
+function rrReveal(){
+  const x=S.rr; if(x.revealed||x.guess==null) return;
+  const pts=x.roles.map(r=>RR_ROLES[r].pts);
+  const pi=x.roles.findIndex(r=>RR_ROLES[r].key==="police");
+  const ti=x.roles.findIndex(r=>RR_ROLES[r].key==="thief");
+  const ok=x.guess===ti;
+  if(!ok){ pts[ti]+=pts[pi]; pts[pi]=0; }                 // wrong guess: Thief takes the Police's points
+  const sc=rrScores();
+  x.names.forEach((n,i)=>{ sc[n]=(sc[n]||0)+pts[i]; });
+  rrSaveScores(sc);
+  x.res={pts,pi,ti,ok}; x.revealed=true; render();
+  if(ok) balloons();
+}
+function rrClearScores(){
+  if(confirm("Clear the Raja Rani scoreboard?")){ rrSaveScores({}); render(); }
+}
+function rrBoardHTML(names){
+  const sc=rrScores();
+  const rows=names.map(n=>[n,sc[n]||0]).sort((a,b)=>b[1]-a[1]);
+  if(!rows.length) return "";
+  const medal=["🥇","🥈","🥉"];
+  return `<h3 style="margin-top:20px">🏆 Scoreboard</h3>${rows.map(([n,t],i)=>
+    `<div class="xm-status"><span>${medal[i]||(i+1)+"."} <b>${esc(n)}</b></span><span class="pink">${t}</span></div>`).join("")}
+    <button class="btn secondary" id="rrClear" style="margin-top:10px">🗑️ Clear scoreboard</button>`;
+}
+function rrHTML(){
+  const x=S.rr; let h="";
+  if(x.step==="result"){
+    h+=`<div class="msg info">👑 Roles have been sent by email. Nobody (including the host) can see who is who until you press Reveal.</div>`;
+    h+=x.names.map((n,i)=>`<div class="xm-status"><span>${esc(n)} <span style="color:var(--muted)">(${esc(x.emails[i])})</span></span><span>${
+      {pending:"⏳ Waiting",sending:"✉️ Sending…",sent:"✅ Sent",failed:"❌ Failed"}[x.status[i]]}</span></div>`).join("");
+    if(x.err && x.status.includes("failed")) h+=`<div class="msg err">Some emails failed: ${esc(x.err)}</div>`;
+    const err=x.gameErr?`<div class="msg err">${esc(x.gameErr)}</div>`:"";
+    h+=`<hr>`;
+    if(!x.revealed && x.phase==="wait"){
+      h+=`<div class="msg info">When everyone has read their email, start the Police's guess.</div>
+        <button class="btn green block" id="rrStartGuess" ${x.busy?"disabled":""}>🚓 Police's guess</button>`;
+    } else if(!x.revealed && x.phase==="guess"){
+      h+=`<div class="msg info">🚓 <b>Police</b>, who do you think is the <b>Thief</b>? Choose privately, then lock your guess. <span style="color:var(--muted)">(Everyone else, look away!)</span></div>${err}
+        <label for="rrGuess">Suspected Thief</label>
+        <select id="rrGuess"><option value="">Select a player…</option>${
+          x.names.map((nm,i)=>`<option value="${i}" ${String(x.guessDraft)===String(i)?"selected":""}>${esc(nm)}</option>`).join("")}</select>
+        <button class="btn green block" id="rrLock" style="margin-top:12px">🔒 Lock guess</button>`;
+    } else if(!x.revealed){
+      h+=`<div class="msg ok">✅ The Police has locked a guess. Press <b>Reveal</b> to see everyone's role and the points.</div>
+        <button class="btn green block" id="rrReveal">🔓 Reveal roles &amp; points</button>`;
+    } else {
+      const r=x.res;
+      h+=`<h3>🔓 Reveal</h3>`;
+      h+=x.names.map((n,i)=>{ const ro=RR_ROLES[x.roles[i]];
+        return `<div class="xm-status"><span>${rrLabel(ro)} – <b>${esc(n)}</b></span><span>+${r.pts[i]}</span></div>`; }).join("");
+      h+=r.ok
+        ? `<div class="msg ok" style="margin-top:14px;font-size:1.05rem">✅ Police <b>${esc(x.names[r.pi])}</b> caught the Thief <b>${esc(x.names[r.ti])}</b> and keeps ${RR_ROLES[x.roles[r.pi]].pts} points! 🎉</div>`
+        : `<div class="msg warn" style="margin-top:14px;font-size:1.05rem">❌ Police <b>${esc(x.names[r.pi])}</b> guessed <b>${esc(x.names[x.guess])}</b>, but the Thief was <b>${esc(x.names[r.ti])}</b>. The Thief takes the Police's ${RR_ROLES[x.roles[r.pi]].pts} points! 🦹</div>`;
+      h+=rrBoardHTML(x.names);
+    }
+    h+=`<div class="row" style="margin-top:16px">
+      ${x.status.includes("failed")&&!x.busy?`<button class="btn" id="rrRetry">🔁 Retry failed emails</button>`:""}
+      <button class="btn secondary" id="rrReset" ${x.busy?"disabled":""}>🔄 New round</button></div>`;
+    return h;
+  }
+  if(S.notice) h+=`<div class="msg ${S.notice.type}">${esc(S.notice.text)}</div>`;
+  h+=`<label>Total number of players (3–20)</label><input type="number" id="rrN" min="3" max="20" value="${x.n}" style="max-width:160px">`;
+  const roles=RR_ROLES.slice(0,x.n).slice().sort((a,b)=>b.pts-a.pts);
+  h+=`<div class="msg info" style="font-size:.85rem"><b>Roles for ${x.n} players:</b> ${roles.map(r=>`${rrLabel(r)} (${r.pts})`).join(" · ")}</div>`;
+  h+=`<label style="margin-top:16px">Player names and email ids</label>`;
+  for(let i=0;i<x.n;i++){
+    h+=`<div class="xm-row"><span class="idx">${i+1}</span>
+      <input type="text" data-rn="${i}" placeholder="Name" value="${esc(x.names[i]||"")}" autocomplete="off">
+      <input type="email" data-re="${i}" placeholder="Email id" value="${esc(x.emails[i]||"")}" autocomplete="off"></div>`;
+  }
+  h+=cfgHTML();
+  h+=`<button class="btn green block" id="rrDraw" style="margin-top:8px">🎲 Assign roles &amp; send emails</button>`;
+  const known=Object.keys(rrScores());
+  if(known.length) h+=rrBoardHTML(known);
+  return h;
+}
+
 function goHome(){
   S=freshState(); padClear(); render();
 }
@@ -674,19 +910,23 @@ function spyHTML(){
 }
 
 function mainHTML(){
-  const titles={landing:"🎮 Game Hub",xmas:"🎄 ChristMom ChristChild",spy:"🕵️ Who Is the Spy?"};
-  let h=`<div class="topbar"><h1 class="title">${titles[S.screen]||"🎯 Multiplayer Number Guessing Game"}</h1><div style="display:flex;gap:8px">${S.screen!=="landing"?`<button class="btn secondary" id="home">🏠 Home</button>`:""}${S.screen==="landing"||S.screen==="xmas"||S.screen==="spy"?`<button class="btn secondary" id="logout">🚪 Logout</button>`:""}</div></div>`;
+  const titles={landing:"🎮 Game Hub",xmas:"🎄 ChristMom ChristChild",spy:"🕵️ Who Is the Spy?",diwali:"🪔 Diwali Daddy Diwali Kid",raja:"👑 Raja Rani"};
+  let h=`<div class="topbar"><h1 class="title">${titles[S.screen]||"🎯 Multiplayer Number Guessing Game"}</h1><div style="display:flex;gap:8px">${S.screen!=="landing"?`<button class="btn secondary" id="home">🏠 Home</button>`:""}${NOSIDE.includes(S.screen)?`<button class="btn secondary" id="logout">🚪 Logout</button>`:""}</div></div>`;
 
   if(S.screen==="landing"){
     h+=`<h3>Choose a game</h3><div class="game-grid">
       <button class="game-btn" id="goNumber"><span class="ico">🎯</span><b>NumberGame</b><span class="d">Guess the secret number – single or multiplayer.</span></button>
       <button class="game-btn" id="goXmas"><span class="ico">🎄</span><b>ChristMom ChristChild</b><span class="d">Secretly match everyone with a Christ Child by email.</span></button>
       <button class="game-btn" id="goSpy"><span class="ico">🕵️</span><b>Who Is the Spy?</b><span class="d">Email each player a secret word – one of them gets a different one.</span></button>
+      <button class="game-btn" id="goDiwali"><span class="ico">🪔</span><b>Diwali Daddy Diwali Kid</b><span class="d">Secretly match everyone with a Diwali Kid by email.</span></button>
+      <button class="game-btn" id="goRaja"><span class="ico">👑</span><b>Raja Rani</b><span class="d">3–20 players. Secret roles by email, Police finds the Thief, scoreboard.</span></button>
     </div>`;
     return h;
   }
   if(S.screen==="xmas") return h+xmasHTML();
   if(S.screen==="spy") return h+spyHTML();
+  if(S.screen==="diwali") return h+dwHTML();
+  if(S.screen==="raja") return h+rrHTML();
 
   if(S.screen==="home"){
     h+=`<h3>🎮 Choose Game Mode</h3>
@@ -791,7 +1031,7 @@ function buildPad(){
 function render(){
   const app=document.getElementById("app");
   const showPad = S.screen==="game";
-  const noSide = S.screen==="landing" || S.screen==="xmas" || S.screen==="spy";
+  const noSide = NOSIDE.includes(S.screen);
   app.innerHTML=`<div class="layout ${showPad?"with-pad":""} ${noSide?"nosidebar":""}">${noSide?"":`<aside>${sidebarHTML()}</aside>`}<main>${mainHTML()}</main>${showPad?`<section class="padcol"><div id="padSlot"></div></section>`:""}</div>`;
   const slot=document.getElementById("padSlot");
   if(slot && PAD) slot.appendChild(PAD);
@@ -811,6 +1051,29 @@ function bind(){
   $("goXmas")&&($("goXmas").onclick=()=>{ S.notice=null; S.screen="xmas"; render(); });
   $("goSpy")&&($("goSpy").onclick=()=>{ S.notice=null; S.screen="spy"; render(); });
   ["Service","Template","Key"].forEach(k=>{ const el=$("cfg"+k); if(el) el.oninput=()=>xmSaveCfg({service:$("cfgService").value.trim(),template:$("cfgTemplate").value.trim(),key:$("cfgKey").value.trim()}); });
+  $("goDiwali")&&($("goDiwali").onclick=()=>{ S.notice=null; S.screen="diwali"; render(); });
+  $("goRaja")&&($("goRaja").onclick=()=>{ S.notice=null; S.screen="raja"; render(); });
+  // diwali
+  $("dwN")&&($("dwN").onchange=e=>{ const c=dwCollect(); S.dw.names=c.names; S.dw.emails=c.emails;
+    S.dw.n=Math.min(30,Math.max(2,parseInt(e.target.value)||2)); rosterSave("dw"); render(); });
+  $("dwDraw")&&($("dwDraw").onclick=dwDraw);
+  $("dwRetry")&&($("dwRetry").onclick=()=>dwRun(true));
+  $("dwReset")&&($("dwReset").onclick=()=>{ const o=S.dw; S.dw=Object.assign(dwFresh(),{n:o.n,names:o.names.slice(),emails:o.emails.slice()}); rosterSave("dw"); S.notice=null; render(); });
+  document.querySelectorAll("[data-dn]").forEach(el=>el.oninput=e=>{ S.dw.names[+el.dataset.dn]=e.target.value; rosterSave("dw"); });
+  document.querySelectorAll("[data-de]").forEach(el=>el.oninput=e=>{ S.dw.emails[+el.dataset.de]=e.target.value; rosterSave("dw"); });
+  // raja rani
+  $("rrN")&&($("rrN").onchange=e=>{ const c=rrCollect(); S.rr.names=c.names; S.rr.emails=c.emails;
+    S.rr.n=Math.min(20,Math.max(3,parseInt(e.target.value)||3)); rosterSave("rr"); render(); });
+  $("rrDraw")&&($("rrDraw").onclick=rrDraw);
+  $("rrRetry")&&($("rrRetry").onclick=()=>rrRun(true));
+  $("rrStartGuess")&&($("rrStartGuess").onclick=()=>{ const x=S.rr; x.phase="guess"; x.guessDraft=""; x.gameErr=null; render(); });
+  $("rrGuess")&&($("rrGuess").onchange=e=>S.rr.guessDraft=e.target.value);
+  $("rrLock")&&($("rrLock").onclick=rrLockGuess);
+  $("rrReveal")&&($("rrReveal").onclick=rrReveal);
+  $("rrClear")&&($("rrClear").onclick=rrClearScores);
+  $("rrReset")&&($("rrReset").onclick=()=>{ const o=S.rr; S.rr=Object.assign(rrFresh(),{n:o.n,names:o.names.slice(),emails:o.emails.slice()}); rosterSave("rr"); S.notice=null; render(); });
+  document.querySelectorAll("[data-rn]").forEach(el=>el.oninput=e=>{ S.rr.names[+el.dataset.rn]=e.target.value; rosterSave("rr"); });
+  document.querySelectorAll("[data-re]").forEach(el=>el.oninput=e=>{ S.rr.emails[+el.dataset.re]=e.target.value; rosterSave("rr"); });
   // spy game
   $("spyN")&&($("spyN").onchange=e=>{ spyCollect(); const x=S.spy; x.n=Math.min(30,Math.max(3,parseInt(e.target.value)||3)); x.spies=Math.min(x.spies,spyMax(x.n)); render(); });
   $("spySpies")&&($("spySpies").onchange=e=>{ spyCollect(); const x=S.spy; x.spies=Math.min(spyMax(x.n),Math.max(1,parseInt(e.target.value)||1)); render(); });
