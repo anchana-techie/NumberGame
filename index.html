@@ -46,6 +46,7 @@
   .modal p{margin:0 0 18px;color:var(--muted);line-height:1.45}
   .modal .btns{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
   @keyframes fadein{from{opacity:0}to{opacity:1}}
+  .toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);max-width:min(92vw,520px);margin:0;z-index:200;box-shadow:0 10px 30px #000a;cursor:pointer;animation:fadein .15s ease-out}
   .topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
   h1.title{margin:0;font-size:1.7rem}
   .row{display:flex;gap:12px;flex-wrap:wrap}
@@ -110,6 +111,78 @@
   .pink{color:#ff4fa3;font-weight:700}
   @media(max-width:600px){.xm-row{grid-template-columns:1fr}.xm-row .idx{display:none}}
 
+  /* skribble */
+  .layout.wide main{max-width:1320px}
+  .sk-head{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:10px 14px;margin-top:12px;flex-wrap:wrap}
+  .sk-clock{width:54px;height:54px;border-radius:50%;border:3px solid var(--warn);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.25rem;color:var(--warn);flex:none}
+  .sk-clock.low{border-color:var(--err);color:var(--err)}
+  .sk-clock.off{border-color:var(--accent2);color:var(--accent2)}
+  .sk-round{font-weight:700;white-space:nowrap}
+  .sk-word{flex:1;text-align:center;min-width:220px}
+  .sk-lbl{font-size:.72rem;letter-spacing:.18em;color:var(--muted);font-weight:700}
+  .sk-blanks{font-size:1.8rem;font-weight:800;min-height:2.4rem;display:flex;justify-content:center;align-items:flex-end;flex-wrap:wrap;gap:4px}
+  .sk-ch{display:inline-block;min-width:1.05em;border-bottom:3px solid var(--text);text-align:center;line-height:1.25}
+  .sk-gap{display:inline-block;width:1.1em}
+  .sk-n{font-size:.8rem;color:var(--muted);font-weight:700;align-self:flex-start;margin-left:6px}
+  .sk-bigword{font-size:1.6rem;font-weight:800;color:var(--accent2);letter-spacing:.04em}
+  .sk-hint{color:var(--muted);font-size:1rem;font-weight:600}
+  .sk-board{display:grid;grid-template-columns:230px minmax(0,1fr) 310px;grid-template-areas:"players stage chat";gap:12px;margin-top:12px;align-items:stretch}
+  .sk-players,.sk-chat{position:relative;background:var(--panel);border:1px solid var(--border);border-radius:14px;min-height:320px;overflow:hidden}
+  .sk-players>.in,.sk-chat>.in{position:absolute;inset:0;overflow:auto}
+  .sk-chat>.in{display:flex;flex-direction:column;overflow:hidden}
+  .sk-p{display:grid;grid-template-columns:34px 1fr auto;gap:6px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--border)}
+  .sk-p .rk{color:var(--muted);font-weight:700;font-size:.9rem}
+  .sk-p .nm{min-width:0;text-align:center}
+  .sk-p .nm span{display:block;font-weight:700;overflow-wrap:anywhere}
+  .sk-p .nm .me{color:#6cc7ff}
+  .sk-p .nm small{color:var(--muted)}
+  .sk-p .nm small em{color:var(--accent2);font-style:normal;font-weight:700}
+  .sk-p .av{font-size:1.7rem;line-height:1;white-space:nowrap}
+  .sk-p .av .pen{font-style:normal;font-size:1.15rem;margin-left:2px}
+  .sk-p .av .tick{font-style:normal;font-size:1rem;color:var(--accent2);margin-left:2px}
+  .sk-p.ok{background:#14402f}
+  .sk-p.drawing{background:#262b52}
+  .sk-p.off{opacity:.55}
+  .sk-p.gone{opacity:.4;text-decoration:line-through}
+  .sk-stage{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--border);background:#fff;aspect-ratio:4/3}
+  .sk-canvas{display:block;width:100%;height:100%;touch-action:none;background:#fff}
+  .sk-canvas.can{cursor:crosshair}
+  .sk-overlay{position:absolute;inset:0;background:#0b0e1cdd;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;text-align:center}
+  .sk-overlay:empty{display:none}
+  .sk-overlay h3{margin:0;font-size:1.3rem}
+  .sk-choices{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .sk-choices .btn{font-size:1.1rem;padding:12px 20px}
+  .sk-rv-list{min-width:220px;max-width:340px;width:100%;max-height:45%;overflow:auto}
+  .sk-rv-list div{display:flex;justify-content:space-between;gap:12px;padding:5px 2px;border-bottom:1px solid var(--border)}
+  .sk-rv-list b{color:var(--accent2)}
+  .sk-tools{display:flex;gap:12px 18px;flex-wrap:wrap;align-items:center;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:10px 12px;margin-top:10px}
+  .sk-colors{display:flex;gap:6px;flex-wrap:wrap}
+  .sk-sizes{display:flex;gap:6px;align-items:center}
+  .sk-sizes .sz{width:34px;height:34px;border-radius:10px;border:1px solid var(--border);background:var(--panel2);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+  .sk-sizes .sz i{display:block;border-radius:50%;background:var(--text)}
+  .sk-sizes .sz.active{outline:2px solid var(--accent2)}
+  .sk-btns{display:flex;gap:6px;flex-wrap:wrap}
+  .sk-btns .btn{padding:7px 11px;font-size:.88rem}
+  .sk-btns .btn.active{outline:2px solid var(--accent2)}
+  .sk-log{flex:1;min-height:0;overflow-y:auto;padding:8px 10px}
+  .sk-log .m{padding:3px 6px;border-radius:6px;word-break:break-word;font-size:.95rem}
+  .sk-log .m:nth-child(even){background:#ffffff08}
+  .sk-log .m.sys{color:#6cc7ff;font-weight:600}
+  .sk-log .m.ok{color:var(--accent2);font-weight:700}
+  .sk-log .m.close{color:var(--warn);font-weight:700}
+  .sk-log .m.priv{color:var(--accent2)}
+  .sk-chatrow{display:flex;gap:6px;padding:8px;border-top:1px solid var(--border)}
+  .sk-chatrow input{flex:1;min-width:0}
+  .sk-chatrow .btn{padding:8px 14px}
+  @media(max-width:960px){
+    .sk-board{grid-template-columns:minmax(0,1fr);grid-template-areas:"stage" "chat" "players"}
+    .sk-players,.sk-chat{min-height:0}
+    .sk-players>.in{position:static;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+    .sk-chat>.in{position:static;height:300px}
+    .sk-word{order:3;flex-basis:100%}
+    .layout.wide .topbar>div{width:100%}
+  }
+
   /* balloons */
   .balloon{position:fixed;bottom:-80px;font-size:42px;animation:rise 4s ease-in forwards;pointer-events:none;z-index:50}
   @keyframes rise{to{transform:translateY(-120vh) rotate(20deg);opacity:.9}}
@@ -118,15 +191,16 @@
 <body>
 
 <div id="app"></div>
+<div id="overlay"></div>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 /* ================= CONSTANTS & HELPERS ================= */
 const EMOJIS = ["🐒","🐷","🦁","🐼","🐸","🦊","🐯","🐶","🦆"];
 const COLORS = { "None":"white", "Red":"red", "Green":"limegreen", "Yellow":"yellow" };
-const GTITLE = {number:"🎯 Number Game", spy:"🕵️ Who Is the Spy?", raja:"👑 Raja Rani"};
-const MAXP = {number:10, spy:15, raja:20};
-const MINP = {number:1, spy:3, raja:3};
+const GTITLE = {number:"🎯 Number Game", spy:"🕵️ Who Is the Spy?", raja:"👑 Raja Rani", skribble:"🎨 Skribble"};
+const MAXP = {number:10, spy:15, raja:20, skribble:12};
+const MINP = {number:1, spy:3, raja:3, skribble:2};
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const spyMax = n => Math.max(1, Math.floor((n-1)/2));
@@ -176,18 +250,35 @@ const SETTINGS={
   raja:[
     {k:"rounds",l:"Rounds (games to play)",o:ROUNDS},
     {k:"guessTime",l:"Time for the Police to guess the Thief",o:T_GUESS}
+  ],
+  skribble:[
+    {k:"rounds",l:"Rounds (everyone draws once per round)",o:ROUNDS},
+    {k:"drawTime",l:"Drawing time per turn",o:[[30,"30 sec"],[45,"45 sec"],[60,"1 min"],[80,"80 sec"],[90,"90 sec"],[120,"2 min"],[180,"3 min"]]},
+    {k:"wordChoice",l:"Word for the drawer",o:[[1,"One random word is given"],[3,"Drawer picks from 3 words"]]},
+    {k:"hints",l:"Letter hints for guessers",o:[[2,"On – a letter appears at ⅓ and ⅔ of the time"],[0,"Off"]]},
+    {k:"src",l:"Words",o:[["random","Built-in word list"],["custom","Only my own words"]]}
   ]
 };
 const DEFAULTS={
   spy:{rounds:3,clueTime:30,voteTime:60,spies:1,mode:"diff",src:"random"},
   number:{rounds:3,digits:4,turnTime:30,maxAttempts:0},
-  raja:{rounds:3,guessTime:60}
+  raja:{rounds:3,guessTime:60},
+  skribble:{rounds:3,drawTime:80,wordChoice:1,hints:2,src:"random"}
 };
 const BLURB={
   spy:"Everyone gets a secret word on their own screen – the spy's word is different (or missing). Players give clues one after another and keep cycling. Anyone who suspects the spy can press “Voting Needed” – most votes is out. Catch the spy to win; if the spy survives until only 2 players are left, the spy wins.",
   number:"One secret number. Guess in turns. N = right digits anywhere, P = right digits in the right place. Faster win = more points.",
-  raja:"Secret roles are dealt to each player's screen. The Police must find the Thief – a wrong guess hands the Police's points to the Thief."
+  raja:"Secret roles are dealt to each player's screen. The Police must find the Thief – a wrong guess hands the Police's points to the Thief.",
+  skribble:"Draw & guess! Each turn one player gets a secret word and draws it; everyone else types guesses in the chat. A letter of the word is revealed after ⅓ of the time and another after ⅔. The faster you guess, the more points you score."
 };
+
+const SK_WORDS=[...new Set(["apple","banana","mango","pizza","burger","sandwich","ice cream","cake","cookie","popcorn","samosa","biryani","dosa","coffee","tea","milk","egg","cheese","bread","carrot","pumpkin","tomato","potato","onion","pineapple","watermelon","strawberry","grapes","lemon","cherry",
+"cat","dog","elephant","giraffe","monkey","lion","tiger","zebra","kangaroo","penguin","owl","eagle","parrot","peacock","butterfly","spider","snake","crocodile","turtle","frog","fish","shark","dolphin","whale","octopus","crab","starfish","rabbit","squirrel","bat","horse","cow","pig","sheep","camel","bee","ant","snail","dinosaur","dragon",
+"sun","moon","star","cloud","rainbow","lightning","rain","snowman","volcano","mountain","river","waterfall","island","beach","desert","forest","tree","flower","lotus","cactus","leaf","mushroom","fire","wave","tornado","planet","rocket","astronaut","alien","telescope",
+"house","castle","bridge","tower","lighthouse","tent","igloo","windmill","school","hospital","temple","pyramid","fence","door","window","stairs","chimney","bed","chair","table","sofa","lamp","mirror","clock","umbrella","key","lock","candle","bucket","broom","scissors","hammer","ladder","shovel","bottle","bowl","spoon","fork","knife","plate","teapot",
+"car","bus","train","bicycle","scooter","rickshaw","airplane","helicopter","boat","ship","submarine","hot air balloon","fire truck","ambulance","tractor","traffic light","anchor","wheel","map","compass",
+"shirt","jeans","hat","shoe","sock","glasses","crown","ring","necklace","backpack","watch","scarf","glove","saree","tie","button",
+"guitar","piano","drum","violin","flute","microphone","headphones","camera","phone","laptop","keyboard","television","radio","robot","battery","magnet","light bulb","remote","charger","balloon","kite","dice","puzzle","chess","cricket bat","football","basketball","tennis racket","skateboard","trophy","medal","flag","bow and arrow","sword","shield","treasure chest","pirate","ghost","witch","zombie","mermaid","wizard","superhero","clown","snowflake","heart","skull","book","pencil","paintbrush","envelope","calendar","globe","backpack","toothbrush","soap","towel","bathtub","sunglasses","swing","slide","seesaw","fountain","bench","ladder","boomerang","hourglass","yo-yo","piggy bank","candy","lollipop","donut","cupcake","chocolate","sushi","noodles","french fries","hot dog","taco"])];
 
 const SPY_PAIRS=[["Coffee","Tea"],["Cat","Dog"],["Pizza","Burger"],["Apple","Pear"],["Tiger","Lion"],["Shirt","Jacket"],["Train","Bus"],["Beach","Island"],["Piano","Guitar"],["Milk","Curd"],["Cricket","Baseball"],["Doctor","Nurse"],["Pen","Pencil"],["Mango","Peach"],["Moon","Sun"],["River","Lake"],["Biryani","Fried Rice"],["Sofa","Chair"],["Laptop","Tablet"],["Chocolate","Candy"],["Bike","Scooter"],["Rain","Snow"],["Football","Rugby"],["Watch","Clock"],["Teacher","Professor"],["Wallet","Purse"],["Spoon","Fork"],["Ocean","Sea"],["Castle","Palace"],["Ice Cream","Kulfi"],["Crow","Eagle"],["Bangle","Ring"],["Dosa","Pancake"],["Cinema","Theatre"],["Hotel","Hostel"],["Camera","Phone"],["Rose","Lotus"],["Lemon","Orange"],["Saree","Dress"],["Bread","Chapati"]];
 
@@ -241,9 +332,8 @@ function freshState(){
 }
 function toast(text,type){
   S.toast={type:type||"info",text}; clearTimeout(S._tt);
-  S._tt=setTimeout(()=>{ S.toast=null; render(); },4500); render();
+  S._tt=setTimeout(()=>{ S.toast=null; renderOverlay(); },4500); render();
 }
-const toastHTML=()=>S.toast?`<div class="msg ${S.toast.type}">${esc(S.toast.text)}</div>`:"";
 function saveMe(){
   const name=String(S.ui.meName!==undefined?S.ui.meName:S.me.name).trim().slice(0,16);
   if(!name){ toast("Please enter your name.","err"); return false; }
@@ -360,6 +450,7 @@ function guestOnMsg(m,fail){
   if(m.t==="joined"){ NET.settled=true; S.busy=null; saveSession(); }
   else if(m.t==="state"){ NET.settled=true; S.busy=null; setRoom(m.s,m.s.now-Date.now()); }
   else if(m.t==="toast"){ toast(m.text,"err"); }
+  else if(m.t==="draw"){ skApply(m.d); }
   else if(m.t==="reject"){ fail(m.why||"Could not join."); }
   else if(m.t==="closed"){ cleanup({type:"warn",text:"The host closed the room."}); }
 }
@@ -389,10 +480,13 @@ function hostOnMsg(conn,m){
     }
     conn._pid=pid; NET.conns[pid]=conn;
     try{ conn.send({t:"joined"}); }catch(e){}
-    pushState(); return;
+    pushState();
+    if(R.g&&R.g.kind==="sk"&&R.phase==="play"){ try{ conn.send({t:"draw",d:{k:"sync",strokes:R.g.strokes}}); }catch(e){} }
+    return;
   }
   const pid=conn._pid; if(!pid) return;
-  if(m.t==="act") dispatch(pid,m.m||{});
+  if(m.t==="draw") hostDraw(pid,m.d);
+  else if(m.t==="act") dispatch(pid,m.m||{});
   else if(m.t==="leave") removePlayer(R,pid);
 }
 function hostOnClose(conn){
@@ -431,6 +525,14 @@ function gameView(R,pid){
   if(g.kind==="num"){
     return {kind:"num",phase:g.phase,ids:g.ids,digits:g.digits,history:g.history,attempts:g.attempts,turn:g.turn,
       deadline:g.deadline,secret:g.phase==="reveal"?g.secret:null,res:g.res};
+  }
+  if(g.kind==="sk"){
+    const isD=pid===g.drawer, has=pid in g.guessed, show=!!g.word&&(isD||has||g.phase==="reveal");
+    return {kind:"sk",phase:g.phase,drawer:g.drawer,deadline:g.deadline,total:g.total,tid:g.tid,
+      word:show?g.word:null, mask:g.word?skMask(g.word,g.rev):"", lens:g.word?skLens(g.word):[],
+      choices:(isD&&g.phase==="choose")?g.choices:[], guessed:Object.assign({},g.guessed), gain:Object.assign({},g.gain),
+      last:R.round>=R.settings.rounds&&g.qi>=g.queue.length-1, res:g.res,
+      chat:g.chat.filter(c=>c.k==="close"?c.to===pid:c.vis==="guessed"?(isD||has):true)};
   }
   const v={kind:"rr",phase:g.phase,ids:g.ids,myRole:g.roles[pid],deadline:g.deadline};
   if(g.phase==="reveal") v.res=Object.assign({},g.res,{roles:g.roles});
@@ -479,7 +581,7 @@ function doAct(R,pid,m){
       }
       return;
     case "next":
-      if(host&&R.phase==="play"&&R.g&&R.g.phase==="reveal"){
+      if(host&&R.phase==="play"&&R.g&&R.g.phase==="reveal"&&R.game!=="skribble"){
         if(R.round>=R.settings.rounds) R.phase="end";
         else { R.round++; deal(R); }
       }
@@ -488,6 +590,7 @@ function doAct(R,pid,m){
   if(R.phase!=="play"||!R.g) return;
   if(R.game==="spy") spyAct(R,pid,m);
   else if(R.game==="number") numAct(R,pid,m);
+  else if(R.game==="skribble") skAct(R,pid,m);
   else rrAct(R,pid,m);
 }
 function setSetting(R,k,v){
@@ -512,9 +615,16 @@ function startGame(R,m){
     }
     st.spies=Math.max(1,Math.min(st.spies,spyMax(act.length)));
   }
+  if(R.game==="skribble"&&R.settings.src==="custom"){
+    const seen=new Set(), words=[];
+    String(m.words||"").split(/[,;\n]+/).forEach(w=>{ w=w.trim().replace(/\s+/g," ").slice(0,30); const k=w.toLowerCase(); if(w&&!seen.has(k)){ seen.add(k); words.push(w); } });
+    const need=R.settings.wordChoice>1?R.settings.wordChoice:1;
+    if(words.length<need) return tell(R,R.hostPid,`Please enter at least ${need} custom word${need>1?"s":""}, separated by commas (you entered ${words.length}).`);
+    R.custom={words};
+  }
   R.round=1; R.scores={}; R.msg=null; R.phase="play"; deal(R);
 }
-function deal(R){ if(R.game==="spy") spyDeal(R); else if(R.game==="number") numDeal(R); else rrDeal(R); }
+function deal(R){ if(R.game==="spy") spyDeal(R); else if(R.game==="number") numDeal(R); else if(R.game==="skribble") skDeal(R); else rrDeal(R); }
 function abort(R,msg){
   R.phase="lobby"; R.g=null; R.msg=msg; R.round=0; R.scores={};
   R.players=R.players.filter(p=>!p.left);
@@ -530,6 +640,10 @@ function afterLeave(R,pid){
     else if(g.phase==="clues"&&g.ids[g.turn]===pid){ g.clues[pid].push("—"); spyAdvance(R); }
   } else if(R.game==="number"){
     if(g.phase==="play"&&g.ids[g.turn]===pid) numNext(R);
+  } else if(R.game==="skribble"){
+    if(act.length<2) abort(R,"A player left, so the game was stopped (Skribble needs at least 2 players).");
+    else if(pid===g.drawer) skEndTurn(R,true);
+    else skCheckAll(R);
   } else {
     const role=g.roles[pid]!=null?RR_ROLES[g.roles[pid]].key:null;
     if(act.length<3) abort(R,"A player left, so the game was stopped (Raja Rani needs at least 3 players).");
@@ -537,9 +651,9 @@ function afterLeave(R,pid){
   }
 }
 function hostTick(){
-  const R=NET.R; if(!R||R.phase!=="play"||!R.g||R.g.phase==="reveal") return;
+  const R=NET.R; if(!R||R.phase!=="play"||!R.g||(R.g.phase==="reveal"&&R.game!=="skribble")) return;
   let ch=false; const now=Date.now();
-  try{ ch=R.game==="spy"?spyTick(R,now):R.game==="number"?numTick(R,now):rrTick(R,now); }catch(e){ console.error(e); }
+  try{ ch=R.game==="spy"?spyTick(R,now):R.game==="number"?numTick(R,now):R.game==="skribble"?skTick(R,now):rrTick(R,now); }catch(e){ console.error(e); }
   if(ch) pushState();
 }
 function addScore(R,pts){ Object.keys(pts).forEach(pid=>{ R.scores[pid]=(R.scores[pid]||0)+pts[pid]; }); }
@@ -734,21 +848,222 @@ function rrTick(R,now){
   return false;
 }
 
+/* ---------- SKRIBBLE ----------
+   Turns: every player draws once per round. The drawer gets a word (random, or picks one of 3).
+   Guessers type in the chat. After 1/3 of the drawing time one letter is revealed, after 2/3 another one.
+   Guesser points depend on the time left; the drawer scores the average of what the guessers scored.
+   Drawing strokes are relayed host -> everyone (they don't go through the full state push).            */
+const SK_REVEAL_MS=6000, SK_PICK_MS=15000, SK_DC_GRACE=8000;
+const skIsLetter=ch=>/[\p{L}\p{N}]/u.test(ch);
+const skKey=s=>String(s).toLowerCase().replace(/[^\p{L}\p{N}]+/gu,"");
+const skMask=(w,rev)=>[...w].map((ch,i)=>skIsLetter(ch)?(rev.includes(i)?ch:"_"):ch).join("");
+const skLens=w=>w.trim().split(/\s+/).map(t=>[...t].filter(skIsLetter).length);
+const skClamp=(x,a,b)=>Math.min(b,Math.max(a,+x||0));
+const skPn=(R,pid)=>(R.players.find(p=>p.pid===pid)||{name:"?"}).name;
+function skClose(a,b){            // true when the two strings differ by exactly one edit
+  if(a===b||Math.abs(a.length-b.length)>1) return false;
+  let i=0,j=0,e=0;
+  while(i<a.length&&j<b.length){
+    if(a[i]===b[j]){ i++; j++; continue; }
+    if(++e>1) return false;
+    if(a.length>b.length) i++; else if(a.length<b.length) j++; else { i++; j++; }
+  }
+  return e+(a.length-i)+(b.length-j)<=1;
+}
+function skSys(g,text){ g.chat.push({id:++g.cid,k:"sys",text}); if(g.chat.length>80) g.chat=g.chat.slice(-80); }
+function skSource(R){ return R.settings.src==="custom"&&R.custom&&R.custom.words.length?R.custom.words:SK_WORDS; }
+function skWords(R,n){
+  const g=R.g, out=[]; let guard=0;
+  while(out.length<n&&guard++<300){
+    if(!g.pool.length) g.pool=shuffle(skSource(R));
+    const w=g.pool.pop(); if(!out.includes(w)) out.push(w);
+  }
+  return out;
+}
+function skDeal(R){
+  const act=R.players.filter(p=>!p.left).map(p=>p.pid);
+  R.g={kind:"sk",phase:"choose",queue:act,qi:-1,drawer:null,choices:[],word:null,rev:[],cap:0,startAt:0,deadline:0,total:0,
+    guessed:{},gain:{},chat:[],strokes:[],npts:0,tid:"",tn:0,cid:0,pool:[],res:null,dcAt:0};
+  skSys(R.g,`🎨 Round 1 of ${R.settings.rounds} – have fun!`);
+  skNextTurn(R);
+}
+function skNextTurn(R){
+  const g=R.g; let pid=null;
+  while(pid===null){
+    g.qi++;
+    if(g.qi>=g.queue.length){
+      if(R.round>=R.settings.rounds){ R.phase="end"; return; }
+      R.round++; g.queue=R.players.filter(p=>!p.left).map(p=>p.pid); g.qi=0;
+      skSys(g,`🎨 Round ${R.round} of ${R.settings.rounds}`);
+    }
+    if(!gone(R,g.queue[g.qi])) pid=g.queue[g.qi];      // players who left / are offline lose their turn
+  }
+  g.drawer=pid; g.word=null; g.rev=[]; g.guessed={}; g.gain={}; g.strokes=[]; g.npts=0; g.res=null; g.dcAt=0;
+  g.tid=Date.now()+"-"+(++g.tn);
+  if(R.settings.wordChoice>1){
+    g.choices=skWords(R,R.settings.wordChoice); g.phase="choose"; g.deadline=Date.now()+SK_PICK_MS;
+    skSys(g,`✏️ ${skPn(R,pid)} is choosing a word…`);
+  } else skStartDraw(R,skWords(R,1)[0]);
+}
+function skStartDraw(R,word){
+  const g=R.g, st=R.settings;
+  g.word=word; g.choices=[]; g.phase="draw"; g.rev=[];
+  const letters=[...word].filter(skIsLetter).length;
+  g.cap=st.hints?Math.max(0,Math.min(2,letters-1)):0;              // never reveal every letter
+  g.total=st.drawTime; g.startAt=Date.now(); g.deadline=g.startAt+st.drawTime*1000;
+  skSys(g,`✏️ ${skPn(R,g.drawer)} is drawing now!`);
+}
+function skReveal(R){
+  const g=R.g, c=[...g.word].map((ch,i)=>skIsLetter(ch)&&!g.rev.includes(i)?i:-1).filter(i=>i>=0);
+  if(!c.length) return false;
+  g.rev.push(c[Math.floor(Math.random()*c.length)]);
+  skSys(g,"💡 Hint: a letter was revealed!");
+  return true;
+}
+function skAct(R,pid,m){
+  const g=R.g;
+  if(m.a==="skpick"&&g.phase==="choose"&&pid===g.drawer){
+    const w=g.choices[+m.i]; if(w!==undefined) skStartDraw(R,w);
+  } else if(m.a==="chat") skChat(R,pid,m.text);
+}
+function skChat(R,pid,raw){
+  const g=R.g, text=String(raw||"").trim().slice(0,80);
+  if(!text||isLeft(R,pid)) return;
+  const isD=pid===g.drawer, has=pid in g.guessed;
+  if(g.phase==="draw"){
+    if(isD||has) g.chat.push({id:++g.cid,k:"msg",pid,text,vis:"guessed"});       // hidden from players still guessing
+    else if(skKey(text)===skKey(g.word)){ skCorrect(R,pid); return; }
+    else {
+      g.chat.push({id:++g.cid,k:"msg",pid,text});
+      const a=skKey(text), b=skKey(g.word);
+      if(b.length>=4&&skClose(a,b)) g.chat.push({id:++g.cid,k:"close",to:pid,text:`“${text}” is very close!`});
+    }
+  } else g.chat.push({id:++g.cid,k:"msg",pid,text});
+  if(g.chat.length>80) g.chat=g.chat.slice(-80);
+}
+function skCorrect(R,pid){
+  const g=R.g, left=Math.max(0,g.deadline-Date.now()), frac=g.total?Math.min(1,left/(g.total*1000)):0;
+  const pts=Math.round(100+400*frac);
+  g.guessed[pid]=pts; g.gain[pid]=pts; addScore(R,{[pid]:pts});
+  g.chat.push({id:++g.cid,k:"ok",pid,text:""});
+  skCheckAll(R);
+}
+function skEligible(R){ const g=R.g; return R.players.filter(p=>!p.left&&p.connected&&p.pid!==g.drawer).map(p=>p.pid); }
+function skCheckAll(R){
+  const g=R.g; if(g.phase!=="draw") return;
+  const el=skEligible(R);
+  if(el.length&&el.every(p=>p in g.guessed)) skEndTurn(R,false);
+}
+function skEndTurn(R,isVoid){
+  const g=R.g; if(g.phase==="reveal") return;
+  const guessers=Object.keys(g.guessed);
+  if(!isVoid&&guessers.length){
+    const n=R.players.filter(p=>!p.left&&p.pid!==g.drawer).length||1;
+    const dp=Math.round(guessers.reduce((a,p)=>a+g.guessed[p],0)/n);
+    g.gain[g.drawer]=dp; addScore(R,{[g.drawer]:dp});
+  }
+  g.res={word:g.word,gain:Object.assign({},g.gain),drawer:g.drawer,void:!!isVoid,nobody:!guessers.length};
+  g.phase="reveal"; g.deadline=Date.now()+SK_REVEAL_MS;
+  skSys(g,g.word?`🔓 The word was “${g.word}”`:"⏭ Turn skipped");
+}
+function skTick(R,now){
+  const g=R.g;
+  if(g.phase==="reveal"){ if(now>=g.deadline){ skNextTurn(R); return true; } return false; }
+  if(gone(R,g.drawer)){                                   // give a disconnected drawer a few seconds to come back
+    if(!g.dcAt) g.dcAt=now;
+    if(now-g.dcAt>SK_DC_GRACE){ skEndTurn(R,true); return true; }
+    return false;
+  } else g.dcAt=0;
+  if(g.phase==="choose"){
+    if(now>=g.deadline){ skStartDraw(R,g.choices[Math.floor(Math.random()*g.choices.length)]); return true; }
+    return false;
+  }
+  let ch=false;
+  const el=now-g.startAt, T=g.total*1000;
+  const want=Math.min(g.cap,(el>=T/3?1:0)+(el>=2*T/3?1:0));
+  while(g.rev.length<want){ if(!skReveal(R)) break; ch=true; }
+  if(now>=g.deadline){ skEndTurn(R,false); return true; }
+  const before=g.phase; skCheckAll(R);
+  return ch||g.phase!==before;
+}
+/* live drawing: validated, stored (so late joiners get it) and relayed. Not part of pushState. */
+function hostDraw(pid,op){
+  const R=NET.R; if(!R||R.phase!=="play"||!R.g||R.g.kind!=="sk"||!op) return;
+  const g=R.g; if(g.phase!=="draw"||g.drawer!==pid) return;
+  if(op.k==="seg"){
+    const pts=(Array.isArray(op.p)?op.p:[]).slice(0,200).map(q=>[Math.round(skClamp(q&&q[0],0,1)*10000)/10000,Math.round(skClamp(q&&q[1],0,1)*10000)/10000]);
+    if(!pts.length||g.npts>60000) return;
+    g.npts+=pts.length;
+    let s=g.strokes[g.strokes.length-1];
+    const id=Math.floor(skClamp(op.id,0,9e15));
+    if(!s||s.id!==id){ s={id,c:/^#[0-9a-f]{3,8}$/i.test(op.c)?op.c:"#000000",w:skClamp(op.w,1,80),p:[]}; g.strokes.push(s); }
+    s.p.push(...pts);
+    op={k:"seg",id:s.id,c:s.c,w:s.w,p:pts};
+  } else if(op.k==="undo") g.strokes.pop();
+  else if(op.k==="clear"){ g.strokes=[]; g.npts=0; }
+  else return;
+  R.players.forEach(p=>{
+    if(p.pid===pid||p.pid===R.hostPid) return;
+    const c=NET.conns[p.pid]; if(c&&c.open){ try{ c.send({t:"draw",d:op}); }catch(e){} }
+  });
+  if(pid!==R.hostPid) skApply(op);                        // the host's own canvas
+}
+
 /* ---- leaving / cleanup ---- */
-function showModal(m){ S.modal=m; render(); }
-function closeModal(){ S.modal=null; render(); }
-function modalHTML(){
-  const m=S.modal; if(!m) return "";
-  return `<div class="modal-back" data-a="modalNo"><div class="modal" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
-    <h3>${esc(m.title)}</h3><p>${esc(m.text)}</p>
-    <div class="btns"><button class="btn secondary" data-a="modalNo">Cancel</button>
-    <button class="btn ${m.danger?"danger":"green"}" data-a="modalYes" id="modalYes">${esc(m.ok)}</button></div></div></div>`;
+/* Popups live in their own persistent #overlay root (outside #app), so a re-render of the page can never
+   swallow a click, and the page-level click handler can't be blocked by the dialog. */
+let _ovKey="", _ovModal=false;
+function showModal(m){ S.modal=m; renderOverlay(); }
+function closeModal(){ S.modal=null; renderOverlay(); }
+function renderOverlay(){
+  const ov=$("overlay"); if(!ov||!S) return;
+  const m=S.modal, t=S.toast;
+  const key=JSON.stringify([m&&[m.title,m.text,m.ok,!!m.danger],t&&[t.type,t.text]]);
+  if(key!==_ovKey){
+    _ovKey=key;
+    ov.innerHTML=(t?`<div class="msg toast ${esc(t.type)}" role="status" data-m="toast">${esc(t.text)}</div>`:"")+
+      (m?`<div class="modal-back" id="modalBack"><div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalText">
+        <h3 id="modalTitle">${esc(m.title)}</h3><p id="modalText">${esc(m.text)}</p>
+        <div class="btns"><button type="button" class="btn secondary" id="modalNo" data-m="no">${esc(m.cancel||"Cancel")}</button>
+        <button type="button" class="btn ${m.danger?"danger":"green"}" id="modalYes" data-m="yes">${esc(m.ok)}</button></div></div></div>`:"");
+  }
+  if(m&&!_ovModal){ const y=$("modalYes"); if(y) y.focus(); }
+  _ovModal=!!m;
+}
+function modalYes(){
+  const a=S.modal&&S.modal.act; S.modal=null; renderOverlay();
+  if(a==="exitgame") sendAct({a:"tolobby"});
+  else if(a==="closeroom") leaveRoom(true);
+  else if(a==="leaveroom") leaveRoom(true);
+}
+function onOverlayClick(e){
+  const b=e.target.closest("[data-m]");
+  if(b){
+    if(b.dataset.m==="yes") modalYes();
+    else if(b.dataset.m==="no") closeModal();
+    else if(b.dataset.m==="toast"){ S.toast=null; renderOverlay(); }
+    return;
+  }
+  if(e.target.id==="modalBack") closeModal();            // click on the dark backdrop = cancel
+}
+function onOverlayKey(e){
+  if(!S.modal) return;
+  if(e.key==="Escape"){ e.preventDefault(); closeModal(); }
+  else if(e.key==="Tab"){                                  // keep keyboard focus inside the dialog
+    const a=$("modalNo"), b=$("modalYes"); if(!a||!b) return;
+    if(e.shiftKey&&document.activeElement===a){ e.preventDefault(); b.focus(); }
+    else if(!e.shiftKey&&document.activeElement===b){ e.preventDefault(); a.focus(); }
+    else if(document.activeElement!==a&&document.activeElement!==b){ e.preventDefault(); b.focus(); }
+  }
 }
 function leaveRoom(force){
   if(NET.role==="host"){
     if(!force) return showModal({title:"Close the room?",text:"This closes the room for everyone and disconnects all players.",ok:"Close room",danger:true,act:"closeroom"});
     Object.values(NET.conns).forEach(c=>{ try{ c.send({t:"closed"}); }catch(e){} });
-  } else { NET.leaving=true; try{ NET.hostConn.send({t:"leave"}); }catch(e){} }
+  } else {
+    if(!force) return showModal({title:"Leave the room?",text:"You will be removed from the room. You can rejoin later with the room code while the room is still open.",ok:"Leave room",danger:true,act:"leaveroom"});
+    NET.leaving=true; try{ NET.hostConn.send({t:"leave"}); }catch(e){}
+  }
   setTimeout(()=>cleanup(),250);
 }
 function cleanup(notice){
@@ -966,6 +1281,7 @@ function landingHTML(){
     <button class="game-btn" data-a="go" data-g="number"><span class="ico">🎯</span><b>NumberGame</b><span class="d">Guess the secret number in turns. Rounds, timers and attempts are set per room.</span></button>
     <button class="game-btn" data-a="go" data-g="spy"><span class="ico">🕵️</span><b>Who Is the Spy?</b><span class="d">Secret words on every screen. Cycle clues, call a vote when you suspect someone.</span></button>
     <button class="game-btn" data-a="go" data-g="raja"><span class="ico">👑</span><b>Raja Rani</b><span class="d">3–20 players. Secret roles, Police finds the Thief, multi-round scores.</span></button>
+    <button class="game-btn" data-a="go" data-g="skribble"><span class="ico">🎨</span><b>Skribble</b><span class="d">Draw the secret word, everyone else guesses in the chat. Hints appear as the time runs out.</span></button>
     <button class="game-btn" data-a="goJoin"><span class="ico">🔑</span><b>Join a room</b><span class="d">Got a room code or invite link from a friend? Enter it here.</span></button>
   </div>
   <h3 style="margin-top:28px">Secret draws by email</h3><div class="game-grid">
@@ -976,7 +1292,6 @@ function landingHTML(){
 }
 function entryHTML(){
   let h=`<div class="topbar"><h1 class="title">${S.game?GTITLE[S.game]:"🔑 Join a room"}</h1><button class="btn secondary" data-a="home">🏠 Home</button></div>`;
-  h+=toastHTML();
   if(S.busy) h+=`<div class="msg info">⏳ ${esc(S.busy)}</div>`;
   h+=`<div class="card2"><h3>You</h3><div class="player-row">
     <input type="text" id="meName" data-keep maxlength="16" placeholder="Your name" value="${esc(S.me.name)}" autocomplete="off">
@@ -1015,13 +1330,12 @@ function roomHTML(){
     <button class="btn secondary" data-a="copyLink">🔗 Invite link</button>
     ${host&&v.phase==="play"?`<button class="btn secondary" data-a="exitgame">⏹ Exit game (keep room)</button>`:""}
     <button class="btn secondary" data-a="leave">${host?"✖ Close room":"🚪 Leave room"}</button></div></div>`;
-  h+=toastHTML();
   h+=`<div class="card2" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
     <div><div class="mut" style="font-size:.8rem">Room code</div><div class="code">${esc(v.code)}</div></div>
     <div class="scoreboard" style="margin:0">${v.players.map(p=>`<span class="chip ${p.connected?"":"off"} ${p.left?"gone":""}">${p.av} ${esc(p.name)}${p.pid===v.hostPid?" 👑":""}${p.pid===v.me?" (you)":""}${p.left?" · left":!p.connected?" · offline":""}</span>`).join("")}</div></div>`;
   if(v.phase==="lobby") return h+lobbyHTML(v,host);
   if(v.phase==="end") return h+endHTML(v,host);
-  return h+(v.game==="spy"?spyGameHTML(v):v.game==="number"?numGameHTML(v):rrGameHTML(v));
+  return h+(v.game==="spy"?spyGameHTML(v):v.game==="number"?numGameHTML(v):v.game==="skribble"?"":rrGameHTML(v));
 }
 function lobbyHTML(v,host){
   const st=v.settings, fields=SETTINGS[v.game], n=v.players.filter(p=>!p.left).length;
@@ -1039,6 +1353,10 @@ function lobbyHTML(v,host){
       h+=`<div class="row"><div><label>Civilians' word</label><input type="text" id="spyCiv" data-keep maxlength="30" autocomplete="off" value="${esc(S.ui.spyCiv||"")}"></div>
         ${st.mode==="diff"?`<div><label>Spy's word</label><input type="text" id="spyW" data-keep maxlength="30" autocomplete="off" value="${esc(S.ui.spyW||"")}"></div>`:""}</div>
         <div class="mut" style="font-size:.82rem;margin-top:6px">Custom words are reused in every round – use random pairs if you play several rounds.</div>`;
+    }
+    if(v.game==="skribble"&&st.src==="custom"){
+      h+=`<label>Your words (separated by commas)</label><input type="text" id="skWords" data-keep maxlength="600" autocomplete="off" placeholder="e.g. rocket, giraffe, pizza, bicycle, ice cream" value="${esc(S.ui.skWords||"")}">
+        <div class="mut" style="font-size:.82rem;margin-top:6px">${st.wordChoice>1?"Add at least 3 words – the drawer picks one of 3. ":""}Words are used in random order and not repeated until the list is used up.</div>`;
     }
     const need=MINP[v.game], ok=n>=need;
     h+=`<button class="btn green block" style="margin-top:18px" data-a="start" ${ok?"":"disabled"}>▶ Start game</button>
@@ -1215,6 +1533,169 @@ function mainHTML(){
   }
 }
 
+/* ---- Skribble UI ----
+   The Skribble play screen is built once ("shell") and then patched region by region, so the canvas, the
+   chat box (focus, typed text) and an in-progress stroke are never destroyed by incoming updates. */
+const SK_COLORS=["#000000","#7f7f7f","#e53935","#fb8c00","#fdd835","#43a047","#00acc1","#1e88e5","#8e24aa","#ec407a","#6d4c41","#c8c8c8"];
+const SK_SIZES=[3,8,16,28];
+let skColor="#000000", skSize=8, skTool="pen", skDraw=null;
+const SKC={el:null,ctx:null,strokes:[],tid:"",sid:0};
+const SKW=800, SKH=600;
+function skPlayView(){ const v=S.room; return !!(S.screen==="room"&&v&&v.game==="skribble"&&v.phase==="play"&&v.g&&v.g.kind==="sk"); }
+function skCanDraw(){ const v=S&&S.room; return !!(v&&v.game==="skribble"&&v.phase==="play"&&v.g&&v.g.kind==="sk"&&v.g.phase==="draw"&&v.g.drawer===v.me); }
+function skStrokeDraw(s,from){
+  const c=SKC.ctx; c.lineCap="round"; c.lineJoin="round"; c.strokeStyle=s.c; c.lineWidth=s.w;
+  for(let i=Math.max(from,0);i<s.p.length;i++){
+    const a=s.p[i-1]||s.p[i], b=s.p[i];
+    c.beginPath(); c.moveTo(a[0]*SKW,a[1]*SKH); c.lineTo(b[0]*SKW+0.01,b[1]*SKH); c.stroke();
+  }
+}
+function skRedraw(){
+  const c=SKC.ctx; c.globalCompositeOperation="source-over"; c.fillStyle="#ffffff"; c.fillRect(0,0,SKW,SKH);
+  SKC.strokes.forEach(s=>skStrokeDraw(s,0));
+}
+function skApply(op){                                      // the only way anything gets drawn on the canvas
+  if(!op||!SKC.ctx) return;
+  if(op.k==="seg"){
+    let s=SKC.strokes[SKC.strokes.length-1];
+    if(!s||s.id!==op.id){ s={id:op.id,c:op.c,w:op.w,p:[]}; SKC.strokes.push(s); }
+    const from=s.p.length; (op.p||[]).forEach(q=>s.p.push(q)); skStrokeDraw(s,from);
+  } else if(op.k==="undo"){ SKC.strokes.pop(); skRedraw(); }
+  else if(op.k==="clear"){ SKC.strokes=[]; skRedraw(); }
+  else if(op.k==="sync"){ SKC.strokes=(op.strokes||[]).map(s=>({id:s.id,c:s.c,w:s.w,p:s.p.slice()})); skRedraw(); }
+}
+function skSend(op){
+  if(NET.role==="host") hostDraw(S.me.pid,op);
+  else if(NET.hostConn&&NET.hostConn.open){ try{ NET.hostConn.send({t:"draw",d:op}); }catch(e){} }
+}
+function skFlush(){
+  const d=skDraw; if(!d) return; d.timer=null;
+  if(!d.pending.length) return;
+  const op={k:"seg",id:d.id,c:d.c,w:d.w,p:d.pending}; d.pending=[]; skSend(op);
+}
+function skEndStroke(){ const d=skDraw; if(!d) return; clearTimeout(d.timer); skFlush(); skDraw=null; }
+function buildSkCanvas(){
+  const cv=document.createElement("canvas"); cv.width=SKW; cv.height=SKH; cv.className="sk-canvas";
+  SKC.el=cv; SKC.ctx=cv.getContext("2d"); skRedraw();
+  const pos=e=>{ const r=cv.getBoundingClientRect(); return [Math.round(skClamp((e.clientX-r.left)/r.width,0,1)*10000)/10000,Math.round(skClamp((e.clientY-r.top)/r.height,0,1)*10000)/10000]; };
+  const push=pts=>{
+    const d=skDraw; if(!d||!pts.length) return;
+    skApply({k:"seg",id:d.id,c:d.c,w:d.w,p:pts});          // draw locally right away…
+    d.pending.push(...pts);                                  // …and send in small batches
+    if(!d.timer) d.timer=setTimeout(skFlush,35);
+  };
+  cv.addEventListener("pointerdown",e=>{
+    if(!skCanDraw()||(e.button!==undefined&&e.button>0)) return;
+    e.preventDefault(); try{ cv.setPointerCapture(e.pointerId); }catch(x){}
+    skEndStroke();
+    const eraser=skTool==="eraser";
+    skDraw={id:Date.now()*100+(SKC.sid++%100),c:eraser?"#ffffff":skColor,w:eraser?Math.round(skSize*1.8):skSize,pending:[],timer:null};
+    push([pos(e)]);
+  });
+  cv.addEventListener("pointermove",e=>{
+    if(!skDraw) return;
+    if(!skCanDraw()){ skEndStroke(); return; }
+    const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];
+    push((evs.length?evs:[e]).map(pos));
+  });
+  ["pointerup","pointercancel","lostpointercapture"].forEach(ev=>cv.addEventListener(ev,skEndStroke));
+}
+function skBlanks(mask){
+  return [...mask].map(ch=>ch===" "?'<span class="sk-gap"></span>':ch==="_"?'<span class="sk-ch">&nbsp;</span>':`<span class="sk-ch">${esc(ch.toUpperCase())}</span>`).join("");
+}
+const skSecs=dl=>Math.max(0,Math.ceil((dl-(Date.now()+S.off))/1000));
+function skRender(app){
+  const v=S.room;
+  if(!$("skShell")){
+    const host=v.me===v.hostPid;
+    app.innerHTML=`<div class="layout wide"><main id="skShell">
+      <div class="topbar"><h1 class="title">${GTITLE.skribble}</h1><div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn secondary" data-a="copyLink">🔗 Invite link</button>
+        ${host?`<button class="btn secondary" data-a="exitgame">⏹ Exit game (keep room)</button>`:""}
+        <button class="btn secondary" data-a="leave">${host?"✖ Close room":"🚪 Leave room"}</button></div></div>
+      <div class="sk-head" id="skHead"></div>
+      <div class="sk-board">
+        <div class="sk-players" style="grid-area:players"><div class="in" id="skPlayers"></div></div>
+        <div style="grid-area:stage;min-width:0"><div class="sk-stage" id="skStage"><div class="sk-overlay" id="skOverlay"></div></div><div id="skTools"></div></div>
+        <div class="sk-chat" style="grid-area:chat"><div class="in"><div class="sk-log" id="skLog"></div>
+          <div class="sk-chatrow"><input type="text" id="skChat" data-keep maxlength="80" autocomplete="off" placeholder="Type your guess here…"><button class="btn" id="skSend" data-a="skchat">Send</button></div></div></div>
+      </div></main></div>`;
+    const st=$("skStage"); st.insertBefore(SKC.el,st.firstChild);
+    const c=$("skChat"); if(S.ui.skChat) c.value=S.ui.skChat;
+  }
+  skPatch(v);
+}
+function skPatch(v){
+  const g=v.g, me=v.me, isD=g.drawer===me, has=!!g.guessed[me], drawing=isD&&g.phase==="draw";
+  const setH=(id,h)=>{ const el=$(id); if(el&&el._h!==h){ el._h=h; el.innerHTML=h; } };
+  if(SKC.tid!==g.tid){ SKC.tid=g.tid; skDraw=null; skApply({k:"clear"}); }   // new turn = blank canvas
+  SKC.el.classList.toggle("can",drawing);
+
+  // header: clock | round | word / blanks | room
+  const low=g.phase!=="reveal"&&g.deadline&&skSecs(g.deadline)<=5;
+  let lbl,body;
+  if(g.phase==="choose"){ lbl=isD?"CHOOSE A WORD":"GET READY"; body=`<span class="sk-hint">${isD?"Pick one of the words below":`${pAv(v,g.drawer)} ${esc(pName(v,g.drawer))} is choosing a word…`}</span>`; }
+  else if(g.phase==="reveal"){ lbl="THE WORD WAS"; body=g.res&&g.res.word?`<span class="sk-bigword">${esc(g.res.word)}</span>`:`<span class="sk-hint">Turn skipped</span>`; }
+  else if(isD){ lbl="DRAW THIS"; body=`<span class="sk-bigword">${esc(g.word)}</span>`; }
+  else if(has){ lbl="YOU GUESSED IT!"; body=`<span class="sk-bigword">${esc(g.word)}</span>`; }
+  else { lbl="GUESS THIS"; body=skBlanks(g.mask)+`<span class="sk-n" title="Number of letters">${g.lens.join(" ")}</span>`; }
+  setH("skHead",`${g.phase==="reveal"?`<div class="sk-clock off">✓</div>`:`<div class="sk-clock ${low?"low":""}" data-dl="${g.deadline}" data-dlmode="s">${skSecs(g.deadline)}</div>`}
+    <div class="sk-round">Round ${v.round} of ${v.settings.rounds}</div>
+    <div class="sk-word"><div class="sk-lbl">${lbl}</div><div class="sk-blanks" id="skBlanks">${body}</div></div>
+    <span class="chip">Room <b>${esc(v.code)}</b></span>`);
+
+  // players (left): rank, name + points, emoji (+ pencil for the drawer)
+  const rows=v.players.map((p,i)=>[p,v.scores[p.pid]||0,i]).sort((a,b)=>b[1]-a[1]||a[2]-b[2]);
+  setH("skPlayers",rows.map(([p,sc],i)=>{
+    const gain=g.gain[p.pid]||0;
+    return `<div class="sk-p ${g.guessed[p.pid]?"ok":""} ${p.pid===g.drawer?"drawing":""} ${p.connected?"":"off"} ${p.left?"gone":""}">
+      <span class="rk">#${i+1}</span>
+      <div class="nm"><span class="${p.pid===me?"me":""}">${esc(p.name)}${p.pid===me?" (You)":""}${p.pid===v.hostPid?" 👑":""}</span>
+        <small>${sc} points${gain>0?` <em>+${gain}</em>`:""}${p.left?" · left":!p.connected?" · offline":""}</small></div>
+      <span class="av">${p.av}${p.pid===g.drawer?'<i class="pen" title="Drawing">✏️</i>':""}${g.guessed[p.pid]?'<i class="tick">✓</i>':""}</span></div>`;
+  }).join(""));
+
+  // overlay on the canvas: word choice / turn result
+  let ov="";
+  if(g.phase==="choose"){
+    ov=isD?`<h3>Choose a word to draw</h3><div class="sk-choices">${g.choices.map((w,i)=>`<button class="btn green" data-a="skpick" data-i="${i}">${esc(w)}</button>`).join("")}</div>
+        <div class="mut">A random one is picked in <b data-dl="${g.deadline}" data-dlmode="s">${skSecs(g.deadline)}</b>s</div>`
+      :`<h3>${pAv(v,g.drawer)} ${esc(pName(v,g.drawer))} is choosing a word…</h3>`;
+  } else if(g.phase==="reveal"&&g.res){
+    const r=g.res, ent=Object.entries(r.gain).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]);
+    ov=`<h3>${r.word?`The word was <span class="pink">${esc(r.word)}</span>`:"Turn skipped"}</h3>
+      ${r.void?`<div class="mut">The drawer left, so nobody scores this turn.</div>`:r.nobody?`<div class="mut">Nobody guessed it 😶</div>`:""}
+      ${ent.length?`<div class="sk-rv-list">${ent.map(([pid,pts])=>`<div><span>${pAv(v,pid)} ${esc(pName(v,pid))}${pid===r.drawer?" ✏️":""}</span><b>+${pts}</b></div>`).join("")}</div>`:""}
+      <div class="mut">${g.last?"Final results in":"Next turn in"} <b data-dl="${g.deadline}" data-dlmode="s">${skSecs(g.deadline)}</b>s</div>`;
+  }
+  setH("skOverlay",ov);
+
+  // drawing tools (drawer only)
+  setH("skTools",drawing?`<div class="sk-tools">
+    <div class="sk-colors">${SK_COLORS.map(c=>`<button class="swatch ${skTool==="pen"&&skColor===c?"active":""}" data-a="skcolor" data-c="${c}" style="background:${c}" title="${c}"></button>`).join("")}</div>
+    <div class="sk-sizes">${SK_SIZES.map(z=>`<button class="sz ${skSize===z?"active":""}" data-a="sksize" data-z="${z}" title="Brush size ${z}"><i style="width:${Math.round(4+z*.6)}px;height:${Math.round(4+z*.6)}px"></i></button>`).join("")}</div>
+    <div class="sk-btns"><button class="btn secondary ${skTool==="eraser"?"active":""}" data-a="sktool">🧽 Eraser</button>
+      <button class="btn secondary" data-a="skundo">↩️ Undo</button><button class="btn secondary" data-a="skclear">🗑️ Clear</button></div></div>`:"");
+
+  // chat (right)
+  const nm=pid=>esc(pName(v,pid));
+  const lg=$("skLog"), stick=!lg._h||lg.scrollHeight-lg.scrollTop-lg.clientHeight<60;
+  setH("skLog",g.chat.map(c=>c.k==="sys"?`<div class="m sys">${esc(c.text)}</div>`
+    :c.k==="ok"?`<div class="m ok">✅ ${nm(c.pid)} guessed the word!</div>`
+    :c.k==="close"?`<div class="m close">🔥 ${esc(c.text)}</div>`
+    :`<div class="m ${c.vis==="guessed"?"priv":""}"><b>${nm(c.pid)}:</b> ${esc(c.text)}</div>`).join(""));
+  if(stick) lg.scrollTop=lg.scrollHeight;
+  const inp=$("skChat"), btn=$("skSend"), was=inp.disabled;
+  inp.disabled=drawing; btn.disabled=drawing;
+  inp.placeholder=drawing?"You're drawing…":has?"You guessed it! Chat with the other guessers…":"Type your guess here…";
+  if(was&&!drawing&&document.activeElement===document.body) inp.focus();
+}
+function doSkChat(){
+  const el=$("skChat"); if(!el||el.disabled) return;
+  const t=el.value.trim(); if(!t) return;
+  el.value=""; S.ui.skChat=""; sendAct({a:"chat",text:t});
+}
+
 /* ================= SCRATCHPAD (built once so drawings survive re-renders) ================= */
 let PAD=null, padCtx=null, padTool="pen", padColor="#ff6b81", padSize=4, padUndo=[];
 const PAD_COLORS=["#ffffff","#ff6b81","#46d6a4","#ffcc66","#6cc7ff","#c58bff"];
@@ -1274,6 +1755,7 @@ function buildPad(){
 /* ================= RENDER ================= */
 function render(){
   const app=$("app"); if(!app||!S) return;
+  if(skPlayView()){ skRender(app); renderOverlay(); return; }
   const ae=document.activeElement; let keep=null;
   if(ae&&ae.dataset&&ae.dataset.keep!==undefined&&ae.id) keep={id:ae.id,s:ae.selectionStart,e:ae.selectionEnd};
   // new Number-game round -> reset the personal colour panel and scratchpad
@@ -1286,7 +1768,7 @@ function render(){
       S.positions=Object.fromEntries([...Array(10).keys()].map(i=>[i,""]));
     }
   }
-  app.innerHTML=`<div class="layout ${inNum?"with-pad":""}"><main>${mainHTML()}</main>${inNum?`<section class="padcol"><div id="padSlot"></div></section>`:""}</div>${modalHTML()}`;
+  app.innerHTML=`<div class="layout ${inNum?"with-pad":""}"><main>${mainHTML()}</main>${inNum?`<section class="padcol"><div id="padSlot"></div></section>`:""}</div>`;
   const slot=$("padSlot"); if(slot&&PAD) slot.appendChild(PAD);
   app.querySelectorAll("[data-keep]").forEach(el=>{ if(S.ui[el.id]!==undefined) el.value=S.ui[el.id]; });
   bind();
@@ -1297,6 +1779,7 @@ function render(){
     const c=$("spyClue")||$("guess");
     if(c&&document.activeElement===document.body) c.focus();
   }
+  renderOverlay();
 }
 
 /* ---- per-render bindings (email games + colour panel) ---- */
@@ -1350,14 +1833,14 @@ function onAppClick(e){
     case "exitgame":
       showModal({title:"Exit the game?",text:"Everyone stays in the room. You'll go back to the lobby where you can change the settings and start again.",ok:"Exit game",danger:false,act:"exitgame"});
       break;
-    case "modalNo": closeModal(); break;
-    case "modalYes": {
-      const a=S.modal&&S.modal.act; S.modal=null; render();
-      if(a==="exitgame") sendAct({a:"tolobby"});
-      else if(a==="closeroom") leaveRoom(true);
-      break;
-    }
-    case "start": sendAct({a:"start",civ:S.ui.spyCiv,spyW:S.ui.spyW}); break;
+    case "skchat": doSkChat(); break;
+    case "skpick": sendAct({a:"skpick",i:+t.dataset.i}); break;
+    case "skcolor": skColor=t.dataset.c; skTool="pen"; skPatch(S.room); break;
+    case "sksize": skSize=+t.dataset.z; skPatch(S.room); break;
+    case "sktool": skTool=skTool==="eraser"?"pen":"eraser"; skPatch(S.room); break;
+    case "skundo": if(skCanDraw()){ skEndStroke(); skApply({k:"undo"}); skSend({k:"undo"}); } break;
+    case "skclear": if(skCanDraw()){ skEndStroke(); skApply({k:"clear"}); skSend({k:"clear"}); } break;
+    case "start": sendAct({a:"start",civ:S.ui.spyCiv,spyW:S.ui.spyW,words:S.ui.skWords}); break;
     case "act": sendAct({a:t.dataset.x}); break;
     case "clue": doClue(); break;
     case "callvote": sendAct({a:"callvote"}); break;
@@ -1382,11 +1865,11 @@ function onAppInput(e){
   }
 }
 function onAppKey(e){
-  if(e.key==="Escape"&&S.modal){ closeModal(); return; }
   if(e.key!=="Enter") return;
   const id=e.target.id;
   if(id==="spyClue") doClue();
   else if(id==="guess") doGuess();
+  else if(id==="skChat") doSkChat();
   else if(id==="joinCode") joinRoom(S.ui.joinCode||"");
 }
 
@@ -1394,17 +1877,19 @@ function onAppKey(e){
 let ticker=null;
 function startApp(){
   S=freshState();
-  buildPad();
+  buildPad(); buildSkCanvas();
   const app=$("app");
   app.addEventListener("click",onAppClick);
   app.addEventListener("change",e=>{ onAppInput(e); onAppChange(e); });
   app.addEventListener("input",onAppInput);
   app.addEventListener("keydown",onAppKey);
-  document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&S.modal) closeModal(); });
+  const ov=$("overlay");
+  ov.addEventListener("click",onOverlayClick);
+  document.addEventListener("keydown",onOverlayKey);
   if(!ticker) ticker=setInterval(()=>{
     document.querySelectorAll("[data-dl]").forEach(el=>{
       const s=Math.max(0,Math.ceil((+el.dataset.dl-(Date.now()+S.off))/1000));
-      el.textContent="⏱ "+(s>=60?Math.floor(s/60)+":"+String(s%60).padStart(2,"0"):s+"s");
+      el.textContent=el.dataset.dlmode==="s"?String(s):"⏱ "+(s>=60?Math.floor(s/60)+":"+String(s%60).padStart(2,"0"):s+"s");
       el.classList.toggle("low",s<=5);
     });
   },250);
