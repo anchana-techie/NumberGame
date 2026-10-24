@@ -113,7 +113,7 @@
   .pink{color:#ff4fa3;font-weight:700}
   @media(max-width:600px){.xm-row{grid-template-columns:1fr}.xm-row .idx{display:none}}
 
-  /* skribble */
+  /* Scribblio */
   .layout.wide main{max-width:1320px}
   .sk-head{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:10px 14px;margin-top:12px;flex-wrap:wrap}
   .sk-clock{width:54px;height:54px;border-radius:50%;border:3px solid var(--warn);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.25rem;color:var(--warn);flex:none}
@@ -364,7 +364,7 @@
 /* ================= CONSTANTS & HELPERS ================= */
 const EMOJIS = ["🐒","🐷","🦁","🐼","🐸","🦊","🐯","🐶","🦆"];
 const COLORS = { "None":"white", "Red":"red", "Green":"limegreen", "Yellow":"yellow" };
-const GTITLE = {number:"🎯 Number Game", spy:"🕵️ Who Is the Spy?", raja:"👑 Raja Rani", skribble:"🎨 Scribblio"};
+const GTITLE = {number:"🎯 Number Game", spy:"🕵️ Who Is the Spy?", raja:"👑 Raja Rani", skribble:"🎨 Skribble"};
 const MAXP = {number:10, spy:15, raja:20, skribble:12};
 const MINP = {number:1, spy:3, raja:3, skribble:2};
 const $ = id => document.getElementById(id);
@@ -417,7 +417,7 @@ const SETTINGS={
     {k:"rounds",l:"Rounds (games to play)",o:ROUNDS},
     {k:"guessTime",l:"Time for the Police to guess the Thief",o:T_GUESS}
   ],
-  skribble:[
+  Scribblio:[
     {k:"rounds",l:"Rounds (everyone draws once per round)",o:ROUNDS},
     {k:"drawTime",l:"Drawing time per turn",o:[[30,"30 sec"],[45,"45 sec"],[60,"1 min"],[80,"80 sec"],[90,"90 sec"],[120,"2 min"],[180,"3 min"]]},
     {k:"wordChoice",l:"Word for the drawer",o:[[1,"One random word is given"],[3,"Drawer picks from 3 words"]]},
@@ -429,13 +429,13 @@ const DEFAULTS={
   spy:{rounds:3,clueTime:30,voteTime:60,spies:1,mode:"diff",src:"random"},
   number:{rounds:3,digits:4,turnTime:30,maxAttempts:0},
   raja:{rounds:3,guessTime:60},
-  skribble:{rounds:3,drawTime:80,wordChoice:1,hints:2,src:"random"}
+  Scribblio:{rounds:3,drawTime:80,wordChoice:1,hints:2,src:"random"}
 };
 const BLURB={
   spy:"Everyone gets a secret word on their own screen – the spy's word is different (or missing). Players give clues one after another and keep cycling. Anyone who suspects the spy can press “Voting Needed” – most votes is out. Catch the spy to win; if the spy survives until only 2 players are left, the spy wins.",
   number:"One secret number. Guess in turns. N = right digits anywhere, P = right digits in the right place. Faster win = more points.",
   raja:"Secret roles are dealt to each player's screen. The Police must find the Thief – a wrong guess hands the Police's points to the Thief.",
-  skribble:"Draw & guess! Each turn one player gets a secret word and draws it; everyone else types guesses in the chat. A letter of the word is revealed after ⅓ of the time and another after ⅔. The faster you guess, the more points you score."
+  Scribblio:"Draw & guess! Each turn one player gets a secret word and draws it; everyone else types guesses in the chat. A letter of the word is revealed after ⅓ of the time and another after ⅔. The faster you guess, the more points you score."
 };
 
 const SK_WORDS=[...new Set(["apple","banana","mango","pizza","burger","sandwich","ice cream","cake","cookie","popcorn","samosa","biryani","dosa","coffee","tea","milk","egg","cheese","bread","carrot","pumpkin","tomato","potato","onion","pineapple","watermelon","strawberry","grapes","lemon","cherry",
@@ -747,7 +747,7 @@ function doAct(R,pid,m){
       }
       return;
     case "next":
-      if(host&&R.phase==="play"&&R.g&&R.g.phase==="reveal"&&R.game!=="skribble"){
+      if(host&&R.phase==="play"&&R.g&&R.g.phase==="reveal"&&R.game!=="Scribblio"){
         if(R.round>=R.settings.rounds) R.phase="end";
         else { R.round++; deal(R); }
       }
@@ -756,7 +756,7 @@ function doAct(R,pid,m){
   if(R.phase!=="play"||!R.g) return;
   if(R.game==="spy") spyAct(R,pid,m);
   else if(R.game==="number") numAct(R,pid,m);
-  else if(R.game==="skribble") skAct(R,pid,m);
+  else if(R.game==="Scribblio") skAct(R,pid,m);
   else rrAct(R,pid,m);
 }
 function setSetting(R,k,v){
@@ -781,7 +781,7 @@ function startGame(R,m){
     }
     st.spies=Math.max(1,Math.min(st.spies,spyMax(act.length)));
   }
-  if(R.game==="skribble"&&R.settings.src==="custom"){
+  if(R.game==="Scribblio"&&R.settings.src==="custom"){
     const seen=new Set(), words=[];
     String(m.words||"").split(/[,;\n]+/).forEach(w=>{ w=w.trim().replace(/\s+/g," ").slice(0,30); const k=w.toLowerCase(); if(w&&!seen.has(k)){ seen.add(k); words.push(w); } });
     const need=R.settings.wordChoice>1?R.settings.wordChoice:1;
@@ -790,7 +790,7 @@ function startGame(R,m){
   }
   R.round=1; R.scores={}; R.msg=null; R.phase="play"; deal(R);
 }
-function deal(R){ if(R.game==="spy") spyDeal(R); else if(R.game==="number") numDeal(R); else if(R.game==="skribble") skDeal(R); else rrDeal(R); }
+function deal(R){ if(R.game==="spy") spyDeal(R); else if(R.game==="number") numDeal(R); else if(R.game==="Scribblio") skDeal(R); else rrDeal(R); }
 function abort(R,msg){
   R.phase="lobby"; R.g=null; R.msg=msg; R.round=0; R.scores={};
   R.players=R.players.filter(p=>!p.left);
@@ -807,7 +807,7 @@ function afterLeave(R,pid){
   } else if(R.game==="number"){
     if(g.phase==="play"&&g.ids[g.turn]===pid) numNext(R);
   } else if(R.game==="skribble"){
-    if(act.length<2) abort(R,"A player left, so the game was stopped (Scribblio needs at least 2 players).");
+    if(act.length<2) abort(R,"A player left, so the game was stopped (Skribble needs at least 2 players).");
     else if(pid===g.drawer) skEndTurn(R,true);
     else skCheckAll(R);
   } else {
@@ -817,9 +817,9 @@ function afterLeave(R,pid){
   }
 }
 function hostTick(){
-  const R=NET.R; if(!R||R.phase!=="play"||!R.g||(R.g.phase==="reveal"&&R.game!=="skribble")) return;
+  const R=NET.R; if(!R||R.phase!=="play"||!R.g||(R.g.phase==="reveal"&&R.game!=="Scribblio")) return;
   let ch=false; const now=Date.now();
-  try{ ch=R.game==="spy"?spyTick(R,now):R.game==="number"?numTick(R,now):R.game==="skribble"?skTick(R,now):rrTick(R,now); }catch(e){ console.error(e); }
+  try{ ch=R.game==="spy"?spyTick(R,now):R.game==="number"?numTick(R,now):R.game==="Scribblio"?skTick(R,now):rrTick(R,now); }catch(e){ console.error(e); }
   if(ch) pushState();
 }
 function addScore(R,pts){ Object.keys(pts).forEach(pid=>{ R.scores[pid]=(R.scores[pid]||0)+pts[pid]; }); }
@@ -1014,7 +1014,7 @@ function rrTick(R,now){
   return false;
 }
 
-/* ---------- SKRIBBLE ----------
+/* ---------- Scribblio ----------
    Turns: every player draws once per round. The drawer gets a word (random, or picks one of 3).
    Guessers type in the chat. After 1/3 of the drawing time one letter is revealed, after 2/3 another one.
    Guesser points depend on the time left; the drawer scores the average of what the guessers scored.
@@ -1443,12 +1443,12 @@ function topbar(title,home){
 function landingHTML(){
   let h=`<header class="hero"><h1>Game Hub</h1><p>Open a room, share the code, and play with friends.</p></header>`;
   if(S.notice) h+=`<div class="msg ${S.notice.type}">${esc(S.notice.text)}</div>`;
-  h+=`<h3 class="home-h">Play online with a room code</h3><div class="game-grid">
-    <button class="game-btn" style="--glow:#46d6a4" data-a="go" data-g="number"><span class="ico">🎯</span><b>NumberGame</b><span class="d">Guess the secret number in turns. Rounds, timers and attempts are set per room.</span></button>
-    <button class="game-btn" style="--glow:#b48cff" data-a="go" data-g="spy"><span class="ico">🕵️</span><b>Who Is the Spy?</b><span class="d">Secret words on every screen. Cycle clues, call a vote when you suspect someone.</span></button>
-    <button class="game-btn" style="--glow:#ffcc66" data-a="go" data-g="raja"><span class="ico">👑</span><b>Raja Rani</b><span class="d">3–20 players. Secret roles, Police finds the Thief, multi-round scores.</span></button>
-    <button class="game-btn" style="--glow:#ff6b9d" data-a="go" data-g="skribble"><span class="ico">🎨</span><b>Scribblio</b><span class="d">Draw the secret word, everyone else guesses in the chat. Hints appear as the time runs out.</span></button>
-    <button class="game-btn" style="--glow:#6cc7ff" data-a="goJoin"><span class="ico">🔑</span><b>Join a room</b><span class="d">Got a room code or invite link from a friend? Enter it here.</span></button>
+  h+=`<h3>Play online with a room code</h3><div class="game-grid">
+    <button class="game-btn" data-a="go" data-g="number"><span class="ico">🎯</span><b>NumberGame</b><span class="d">Guess the secret number in turns. Rounds, timers and attempts are set per room.</span></button>
+    <button class="game-btn" data-a="go" data-g="spy"><span class="ico">🕵️</span><b>Who Is the Spy?</b><span class="d">Secret words on every screen. Cycle clues, call a vote when you suspect someone.</span></button>
+    <button class="game-btn" data-a="go" data-g="raja"><span class="ico">👑</span><b>Raja Rani</b><span class="d">3–20 players. Secret roles, Police finds the Thief, multi-round scores.</span></button>
+    <button class="game-btn" data-a="go" data-g="skribble"><span class="ico">🎨</span><b>Skribble</b><span class="d">Draw the secret word, everyone else guesses in the chat. Hints appear as the time runs out.</span></button>
+    <button class="game-btn" data-a="goJoin"><span class="ico">🔑</span><b>Join a room</b><span class="d">Got a room code or invite link from a friend? Enter it here.</span></button>
   </div>
   <h3 class="home-h" style="margin-top:34px">Secret draws by email</h3><div class="game-grid">
     <button class="game-btn" style="--glow:#5ee08a" data-a="goXmas"><span class="ico">🎄</span><b>ChristMom ChristChild</b><span class="d">Secretly match everyone with a Christ Child by email.</span></button>
@@ -1501,7 +1501,7 @@ function roomHTML(){
     <div class="scoreboard" style="margin:0">${v.players.map(p=>`<span class="chip ${p.connected?"":"off"} ${p.left?"gone":""}">${p.av} ${esc(p.name)}${p.pid===v.hostPid?" 👑":""}${p.pid===v.me?" (you)":""}${p.left?" · left":!p.connected?" · offline":""}</span>`).join("")}</div></div>`;
   if(v.phase==="lobby") return h+lobbyHTML(v,host);
   if(v.phase==="end") return h+endHTML(v,host);
-  return h+(v.game==="spy"?spyGameHTML(v):v.game==="number"?numGameHTML(v):v.game==="skribble"?"":rrGameHTML(v));
+  return h+(v.game==="spy"?spyGameHTML(v):v.game==="number"?numGameHTML(v):v.game==="Scribblio"?"":rrGameHTML(v));
 }
 function lobbyHTML(v,host){
   const st=v.settings, fields=SETTINGS[v.game], n=v.players.filter(p=>!p.left).length;
@@ -1520,7 +1520,7 @@ function lobbyHTML(v,host){
         ${st.mode==="diff"?`<div><label>Spy's word</label><input type="text" id="spyW" data-keep maxlength="30" autocomplete="off" value="${esc(S.ui.spyW||"")}"></div>`:""}</div>
         <div class="mut" style="font-size:.82rem;margin-top:6px">Custom words are reused in every round – use random pairs if you play several rounds.</div>`;
     }
-    if(v.game==="skribble"&&st.src==="custom"){
+    if(v.game==="Scribblio"&&st.src==="custom"){
       h+=`<label>Your words (separated by commas)</label><input type="text" id="skWords" data-keep maxlength="600" autocomplete="off" placeholder="e.g. rocket, giraffe, pizza, bicycle, ice cream" value="${esc(S.ui.skWords||"")}">
         <div class="mut" style="font-size:.82rem;margin-top:6px">${st.wordChoice>1?"Add at least 3 words – the drawer picks one of 3. ":""}Words are used in random order and not repeated until the list is used up.</div>`;
     }
@@ -1699,16 +1699,16 @@ function mainHTML(){
   }
 }
 
-/* ---- Skribble UI ----
-   The Skribble play screen is built once ("shell") and then patched region by region, so the canvas, the
+/* ---- Scribblio UI ----
+   The Scribblio play screen is built once ("shell") and then patched region by region, so the canvas, the
    chat box (focus, typed text) and an in-progress stroke are never destroyed by incoming updates. */
 const SK_COLORS=["#000000","#7f7f7f","#e53935","#fb8c00","#fdd835","#43a047","#00acc1","#1e88e5","#8e24aa","#ec407a","#6d4c41","#c8c8c8"];
 const SK_SIZES=[3,8,16,28];
 let skColor="#000000", skSize=8, skTool="pen", skDraw=null;
 const SKC={el:null,ctx:null,strokes:[],tid:"",sid:0};
 const SKW=800, SKH=600;
-function skPlayView(){ const v=S.room; return !!(S.screen==="room"&&v&&v.game==="skribble"&&v.phase==="play"&&v.g&&v.g.kind==="sk"); }
-function skCanDraw(){ const v=S&&S.room; return !!(v&&v.game==="skribble"&&v.phase==="play"&&v.g&&v.g.kind==="sk"&&v.g.phase==="draw"&&v.g.drawer===v.me); }
+function skPlayView(){ const v=S.room; return !!(S.screen==="room"&&v&&v.game==="Scribblio"&&v.phase==="play"&&v.g&&v.g.kind==="sk"); }
+function skCanDraw(){ const v=S&&S.room; return !!(v&&v.game==="Scribblio"&&v.phase==="play"&&v.g&&v.g.kind==="sk"&&v.g.phase==="draw"&&v.g.drawer===v.me); }
 function skStrokeDraw(s,from){
   const c=SKC.ctx; c.lineCap="round"; c.lineJoin="round"; c.strokeStyle=s.c; c.lineWidth=s.w;
   for(let i=Math.max(from,0);i<s.p.length;i++){
@@ -1775,7 +1775,7 @@ function skRender(app){
   if(!$("skShell")){
     const host=v.me===v.hostPid;
     app.innerHTML=`<div class="layout wide"><main id="skShell">
-      <div class="topbar"><h1 class="title">${GTITLE.skribble}</h1><div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div class="topbar"><h1 class="title">${GTITLE.Scribblio}</h1><div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn secondary" data-a="copyLink">🔗 Invite link</button>
         ${host?`<button class="btn secondary" data-a="exitgame">⏹ Exit game (keep room)</button>`:""}
         <button class="btn secondary" data-a="leave">${host?"✖ Close room":"🚪 Leave room"}</button></div></div>
