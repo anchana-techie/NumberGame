@@ -364,9 +364,9 @@
 /* ================= CONSTANTS & HELPERS ================= */
 const EMOJIS = ["🐒","🐷","🦁","🐼","🐸","🦊","🐯","🐶","🦆"];
 const COLORS = { "None":"white", "Red":"red", "Green":"limegreen", "Yellow":"yellow" };
-const GTITLE = {number:"🎯 Number Game", spy:"🕵️ Who Is the Spy?", raja:"👑 Raja Rani", skribble:"🎨 Skribble"};
-const MAXP = {number:10, spy:15, raja:20, skribble:12};
-const MINP = {number:1, spy:3, raja:3, skribble:2};
+const GTITLE = {number:"🎯 Number Game", spy:"🕵️ Who Is the Spy?", raja:"👑 Raja Rani", Scribblio:"🎨 Scribblio"};
+const MAXP = {number:10, spy:15, raja:20, Scribblio:12};
+const MINP = {number:1, spy:3, raja:3, Scribblio:2};
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const spyMax = n => Math.max(1, Math.floor((n-1)/2));
@@ -806,8 +806,8 @@ function afterLeave(R,pid){
     else if(g.phase==="clues"&&g.ids[g.turn]===pid){ g.clues[pid].push("—"); spyAdvance(R); }
   } else if(R.game==="number"){
     if(g.phase==="play"&&g.ids[g.turn]===pid) numNext(R);
-  } else if(R.game==="skribble"){
-    if(act.length<2) abort(R,"A player left, so the game was stopped (Skribble needs at least 2 players).");
+  } else if(R.game==="Scribblio"){
+    if(act.length<2) abort(R,"A player left, so the game was stopped (Scribblio needs at least 2 players).");
     else if(pid===g.drawer) skEndTurn(R,true);
     else skCheckAll(R);
   } else {
@@ -1447,7 +1447,7 @@ function landingHTML(){
     <button class="game-btn" data-a="go" data-g="number"><span class="ico">🎯</span><b>NumberGame</b><span class="d">Guess the secret number in turns. Rounds, timers and attempts are set per room.</span></button>
     <button class="game-btn" data-a="go" data-g="spy"><span class="ico">🕵️</span><b>Who Is the Spy?</b><span class="d">Secret words on every screen. Cycle clues, call a vote when you suspect someone.</span></button>
     <button class="game-btn" data-a="go" data-g="raja"><span class="ico">👑</span><b>Raja Rani</b><span class="d">3–20 players. Secret roles, Police finds the Thief, multi-round scores.</span></button>
-    <button class="game-btn" data-a="go" data-g="skribble"><span class="ico">🎨</span><b>Skribble</b><span class="d">Draw the secret word, everyone else guesses in the chat. Hints appear as the time runs out.</span></button>
+    <button class="game-btn" data-a="go" data-g="Scribblio"><span class="ico">🎨</span><b>Scribblio</b><span class="d">Draw the secret word, everyone else guesses in the chat. Hints appear as the time runs out.</span></button>
     <button class="game-btn" data-a="goJoin"><span class="ico">🔑</span><b>Join a room</b><span class="d">Got a room code or invite link from a friend? Enter it here.</span></button>
   </div>
   <h3 class="home-h" style="margin-top:34px">Secret draws by email</h3><div class="game-grid">
