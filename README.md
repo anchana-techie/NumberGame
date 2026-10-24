@@ -26,7 +26,7 @@ Guess a secret number in turns.
 3–20 players. Secret roles are dealt; the Police must find the Thief. A wrong guess hands the Police's points to the Thief.
 - Settings: rounds, time for the Police to guess.
 
-### 🎨 Skribble (draw & guess)
+### 🎨 Scribblio (draw & guess)
 2–12 players, room based. Each turn one player gets a secret word and draws it; everyone else guesses in the chat.
 - **Layout:** players on the left (rank, points, and a ✏️ next to the emoji of whoever is drawing), the canvas in the middle, the chat on the right.
 - **Blanks & letter count:** guessers see the word as `_ _ _ _ _` with the number of letters next to it (multi-word answers show one count per word).
@@ -39,6 +39,9 @@ Guess a secret number in turns.
 
 ### 🎄 ChristMom ChristChild / 🪔 Diwali Daddy Diwali Kid
 Secret-Santa style draws. Names and emails are entered, a random matching (nobody gets themselves) is made, and each person is emailed their match. Pairs are never shown on screen.
+
+## Look & feel
+The whole hub has a space theme: a twinkling starfield behind every screen, and on the home page a spinning Saturn with tilted rings, a rotating Earth with the Moon orbiting it, a rocket, a UFO, shooting stars, and astronauts hopping on the lunar surface around a planted flag. The game cards are glass panels that glow in each game's colour on hover. All motion is switched off automatically for visitors who have "reduce motion" enabled in their system settings.
 
 ## How to play online
 1. Open `index.html` (host it on any static host, e.g. GitHub Pages, Netlify, or open locally).
@@ -57,7 +60,7 @@ Secret-Santa style draws. Names and emails are entered, a random matching (nobod
 - If friends can't connect (e.g. mobile data vs Wi-Fi, strict firewalls), use **Connection help** on the entry screen to add a free TURN relay (e.g. from metered.ca). Everyone in the room should enter the same details.
 - The email games use [EmailJS](https://www.emailjs.com). Enter your Service ID, Template ID and Public key in the email settings. In your EmailJS template set **To Email** to `{{to_email}}` and put `{{{message_html}}}` (three braces) in the body.
 - Pop-ups (confirmations and notifications) live in their own layer above the page, so they always respond to clicks, the Esc key and clicks on the dark backdrop.
-- Skribble drawing strokes are sent as small batches straight to the host and relayed to everyone; they are not part of the full game-state update, which keeps drawing smooth.
+- Scribblio drawing strokes are sent as small batches straight to the host and relayed to everyone; they are not part of the full game-state update, which keeps drawing smooth.
 - Names, rosters and settings are stored in your browser (localStorage) only.
 - Requires an internet connection (PeerJS and EmailJS are loaded/used online).
 
