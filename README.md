@@ -26,7 +26,7 @@ Guess a secret number in turns.
 3–20 players. Secret roles are dealt; the Police must find the Thief. A wrong guess hands the Police's points to the Thief.
 - Settings: rounds, time for the Police to guess.
 
-### 🎨 Skribble (draw & guess)
+### 🎨 Scribblio (draw & guess)
 2–12 players, room based. Each turn one player gets a secret word and draws it; everyone else guesses in the chat.
 - **Layout:** players on the left (rank, points, and a ✏️ next to the emoji of whoever is drawing), the canvas in the middle, the chat on the right.
 - **Blanks & letter count:** guessers see the word as `_ _ _ _ _` with the number of letters next to it (multi-word answers show one count per word).
@@ -57,7 +57,7 @@ Secret-Santa style draws. Names and emails are entered, a random matching (nobod
 - If friends can't connect (e.g. mobile data vs Wi-Fi, strict firewalls), use **Connection help** on the entry screen to add a free TURN relay (e.g. from metered.ca). Everyone in the room should enter the same details.
 - The email games use [EmailJS](https://www.emailjs.com). Enter your Service ID, Template ID and Public key in the email settings. In your EmailJS template set **To Email** to `{{to_email}}` and put `{{{message_html}}}` (three braces) in the body.
 - Pop-ups (confirmations and notifications) live in their own layer above the page, so they always respond to clicks, the Esc key and clicks on the dark backdrop.
-- Skribble drawing strokes are sent as small batches straight to the host and relayed to everyone; they are not part of the full game-state update, which keeps drawing smooth.
+- Scribblio drawing strokes are sent as small batches straight to the host and relayed to everyone; they are not part of the full game-state update, which keeps drawing smooth.
 - Names, rosters and settings are stored in your browser (localStorage) only.
 - Requires an internet connection (PeerJS and EmailJS are loaded/used online).
 
